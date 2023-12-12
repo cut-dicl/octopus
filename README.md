@@ -1,5 +1,4 @@
-# octopus
-**Distributed Tiered Storage for Cluster Computing**
+# Octopus - Distributed Tiered Storage for Cluster Computing
 
 This repository contains the source code for the **OctopusFS** distributed tiered file system as well as the **Trident** scheduling and prefetching framework.
 
@@ -18,10 +17,10 @@ Trident is a scheduling and prefetching framework that is designed to make task 
 - ProtocolBuffer 2.5.0
 - CMake 3.6.0
 
-Detailed instructions on how to install the prerequisites and build the source code can be found under the folder `instructions`.
+Detailed instructions on how to install the prerequisites and build the source code can be found under the folder [instructions](instructions).
 
 ### Configuration
-You can configure and run OctopusFS and Trident by configuring and running the modified HDFS, Hadoop, and Spark found in this repository. Detailed instructions can be found under the folder `instructions`. In addition, sample configurations for pseudo-distributed and real cluster deployments can be found under the folder `sample-confs`.
+You can configure and run OctopusFS and Trident by configuring and running the modified HDFS, Hadoop, and Spark found in this repository. Detailed instructions can be found under the folder [instructions](instructions). In addition, sample configurations for pseudo-distributed and real cluster deployments can be found under the folder [sample-confs](sample-confs).
 
 Below, we highlight some of the key configurations to use in `hdfs-site.xml` for enabling the unique features offered by OctopusFS.
 You can specify the storage device type of each local directory for storing data on the DataNodes with the following configuration:
@@ -31,7 +30,7 @@ You can specify the storage device type of each local directory for storing data
   <value>[DISK]file:///path/to/datadisk1,[DISK]file:///path/to/datadisk2,[SSD]file:///path/to/datassd,[MEMORY]file:///path/to/folder/for/mem/metadata</value>
 </property>
 ```
-To use the new OctopusFS policies, you need to specify the following configurations:
+To use the new OctopusFS policies, you need to specify the following configurations in `hdfs-site.xml`:
 ```
 <property>
   <name>dfs.default.storage.tier.policy</name>
@@ -124,6 +123,6 @@ spark.hungarian.delay   1000
 - AWS Cloud Credits for Research Grant, Amazon Web Services, July 2018
 - Starting Grant, Cyprus University of Technology, May 2015 - Apr 2017
 
-## Contacts
+## Contact
 - Herodotos Herodotou, Cyprus University of Technology, [https://dicl.cut.ac.cy/](https://dicl.cut.ac.cy/)
 - Elena Kakoulli, Neapolis University Pafos
