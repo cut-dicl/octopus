@@ -64,7 +64,7 @@ To use the new OctopusFS policies, you need to specify the following configurati
 </property>
 ```
 
-Next, we highlight some of the key configurations to use in `yarn-site.xml` for enabling the unique features offered by Trident Resource and Task Schedulers.
+Next, we highlight some of the key configurations to use in `yarn-site.xml` for enabling the unique features offered by Trident Resource and Task Schedulers in Hadoop.
 ```
   <property>
     <name>yarn.resourcemanager.scheduler.class</name>
@@ -87,7 +87,7 @@ Next, we highlight some of the key configurations to use in `yarn-site.xml` for 
     <value>true</value>
   </property>
 ```
-Finally, we highlight some of the key configurations to use in `mapred-site.xml` for enabling the unique features offered by Trident Prefetcher.
+Next, we highlight some of the key configurations to use in `mapred-site.xml` for enabling the unique features offered by Trident Prefetcher in Hadoop.
 ```
 <property>
   <name>mapreduce.octopus.prefetcher.strategy</name>
@@ -99,6 +99,17 @@ Finally, we highlight some of the key configurations to use in `mapred-site.xml`
   <name>mapreduce.octopus.prefetcher.max.wait.ms</name>
   <value>0</value>
 </property>
+```
+Finally, we highlight some of the key configurations to use in `spark-defaults.conf` for enabling the unique features offered by Trident Scheduler in Spark.
+```
+spark.yarn.allocator.use.hungarian   true
+spark.yarn.allocator.enable.tiers    true
+
+spark.scheduler.use.hungarian        true
+spark.scheduler.enable.tiers         true
+
+spark.locality.wait     3000
+spark.hungarian.delay   1000
 ```
 
 ## Publications
