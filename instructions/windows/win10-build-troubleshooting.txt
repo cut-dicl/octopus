@@ -1,0 +1,42 @@
+Error logfile on building Hadoop 2.7.0
+System:
+-Windows 10 64bit
+-Java 1.8.0_102 64bit (along with 101)
+-Apache Maven 3.3.9
+-Apache Ant 1.9.5
+-Python 3.5.2
+-ProtocolBuffer 2.5.0 (only protoc.exe)
+-cmake 3.6.1
+-MSBuild 4.6.1038.0 (Microsoft .NET Framework version 4.0.30319.42000)
+
+** HELPFUL LINK: http://stackoverflow.com/questions/31295963/hadoop-on-windows-building-installation-error
+   Scroll down for windows 10 instructions by user: Romeu Flores **
+
+First errors about plugins - Followed instructions provided about maven plugins:
+In case of failures related to maven plugins run:
+   cd hadoop-maven-plugins
+   mvn install
+
+Concerning / Similar to: error MSB4019: The imported project "C:\Microsoft.Cpp.Default.props" was not found.
+Fix:
+-Launch regedit
+-Navigate to HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\4.0 
+-On default set value data to path of Microsoft.Cpp.Default.props eg: C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V140
+
+Cmake Error: no cmake_c_compiler could be found / no cmake_cxx_compiler could be found
+Fix:
+Enable cmake VS 2015 project generation for hdfs
+On the line 441 of \hadoop-hdfs-project\hadoop-hdfs\pom.xml, edit the else value as the following:
+
+<condition property="generator" value="Visual Studio 10" else="Visual Studio 14 2015 Win64">
+
+(the "value" value applies to win32 - you may want to edit it if building for win32).
+
+Probably the next error after you do this is the following:
+CMake Error: Error: generator : Visual Studio 14 2015 Win64[exec] Does not match the generator used 
+	previously: Visual Studio 10 2010 Win64[exec] Either remove the CMakeCache.txt file and CMakeFiles 
+	directory or choose a different binary directory.
+Fix:
+Remove CMakeCache.txt and also remove CMakeFiles directory.
+https://cmake.org/Bug/view.php?id=14820
+https://cmake.org/gitweb?p=cmake.git;a=commitdiff;h=bccc056b

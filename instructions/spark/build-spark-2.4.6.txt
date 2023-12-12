@@ -1,0 +1,54 @@
+
+#### Build Spark
+# First, you need to build octapus/hadoop-2.7.0 and then run:
+./build/mvn initialize -DskipTests -Dhadoop.version=2.7.0
+
+# Build Spark
+./build/mvn clean package -DskipTests -Pyarn -Dhadoop.version=2.7.0
+
+# Create a binary distribution folder
+./dev/make-distribution.sh --name octapus --clean -Pyarn -Dhadoop.version=2.7.0
+
+# Create a binary distribution tar file
+./dev/make-distribution.sh --name octapus --clean --tgz -Pyarn -Dhadoop.version=2.7.0
+
+
+#### Known issues
+# If during compilation you get the following error:
+   [INFO] Using zinc server for incremental compilation
+   [ERROR] Failed to construct terminal; falling back to unsupported
+   java.lang.NumberFormatException: For input string: "0x100"
+
+# ...then add this line:
+export TERM=xterm-color
+
+# ...in the file
+./build/mvn
+
+
+#### Setup development in eclipse
+
+# Run sbt to prepare setup (it's ok if it fails)
+./build/sbt eclipse
+
+# Import project in eclipse
+Go to File -> Import
+Select Maven -> Existing Maven Projects
+Select directory octapus/spark-2.4.6/core
+
+# In case you run into "Unknown	Scala Version Problem"
+Go to Project -> Preferences
+Go to Scala Compiler
+Select 'Use Project Settings' and 'Latest 2.11 bundle (dynamic)'
+
+# Repeat the above for octapus/spark-2.4.6/resource-managers/yarn
+
+
+
+####### Run individual Scala tests
+
+./build/mvn -Dtest=none -DwildcardSuites=org.apache.spark.scheduler.TaskSchedulerImplSuite test
+
+./build/sbt "core/testOnly org.apache.spark.scheduler.TaskSchedulerImplSuite"
+
+

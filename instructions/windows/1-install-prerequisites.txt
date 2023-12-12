@@ -1,0 +1,115 @@
+#####################################################################
+# Install necessary components
+#####################################################################
+
+This instructions explain how to install and configure
+all prerequisites for compiling and running Hadoop 2.7.0 (YARN).
+These instructions have been tested on Windows 7 and 8.
+
+1. Get the latest Java SE SDK.
+   a) Download the latest Java SE SDK from 
+      http://www.oracle.com/technetwork/java/javase/downloads/index.html
+      *** Do NOT install the JDK in the default location in Program Files.
+          Select a folder path without spaces (e.g., C:\Java\jdk1.8.0_45) ***
+   b) Add a JAVA_HOME system environment variable and set it to JKD folder 
+      (e.g., C:\Java\jdk1.8.0_45)
+      Side note: You can set an environemntal variable from 
+      Control Panel->System->Advanced System Settings->Environment Variables
+   c) Add JDK's bin folder (e.g. C:\Java\jdk1.8.0_45\bin) 
+      to 'Path' system environment variable.
+
+2. Get Eclipse IDE for Java Developers
+   a) Download from http://www.eclipse.org/downloads/
+   b) Extract the zip file to some location on your disk (e.g., C:\Eclipse)
+   c) Navigate to installation directory and add the following 2 lines
+      at the beginning of the eclipse.ini file 
+      (with the correct path to the jre bin folder):
+      -vm
+      C:\Java\jdk1.8.0_45\jre\bin
+
+3. Get Apache Maven (needed for building Hadoop)
+   a) Download and unzip the latest Maven into a directory   	
+	http://maven.apache.org/download.cgi
+   b) Add a M2_HOME system environment variable and set it to the maven folder 
+      (e.g., C:\apache-maven-3.3.3)
+   c) Add Maven bin folder (e.g. C:\apache-maven-3.3.3\bin) 
+      to 'Path' system environment variable.
+
+4. Get Apache Ant (needed for building Hadoop)
+   a) Download and unzip Ant into a directory   	
+	https://ant.apache.org/bindownload.cgi
+   b) Add Ant bin folder (e.g. C:\ant\apache-ant-1.9.5\bin) 
+      to 'Path' system environment variable.
+	
+5. Get Python (needed for building Hadoop)
+   a) Download and install latest Python 3
+      http://www.python.org/getit/ 
+   b) Add Python installation folder (e.g. C:\Python-3.4.3) 
+      to 'Path' system environment variable.
+    
+6. Get ProtocolBuffer 2.5.0 (needed for building Hadoop)
+   a) Download and install Protocol Buffer v2.5.0
+        https://developers.google.com/protocol-buffers/docs/downloads
+        https://github.com/google/protobuf/releases
+   b) Add ProtocolBuffer installation folder (e.g. C:\protobuf-2.5.0) 
+      to 'Path' system environment variable.
+
+7. Get CMake (needed for building Hadoop)
+   a) Download and install the latest stable release of CMake
+        http://www.cmake.org/download/
+   b) Add CMake bin folder (e.g. C:\cmake-3.2.3\bin) 
+      to 'Path' system environment variable.
+
+8. Get cygwin
+   a) Download and install cygwin
+        https://cygwin.com/install.html
+   b) Add cygwin installation folder (e.g., C:\cygwin\bin)
+      to 'Path' system environment variable.
+
+9. Configure MSBuild (needed for building Hadoop windows utilities).
+   a) If you already have Visual Studio installed, then go to (c).
+   b) Otherwise, if you are running on Windows 7:
+      - Uninstall Microsoft .NET Framework with version > 4
+      - Uninstall all Microsoft Visual C++ Redistributable with version >= 2010
+      - Install Microsoft .NET Framework  4
+        (https://www.microsoft.com/en-in/download/confirmation.aspx?id=17718)
+      - Install Windows SDK for Windows 7
+        (https://www.microsoft.com/en-us/download/confirmation.aspx?id=8279)
+      If you are running Windows 8, then you will need to install 
+      Visual Studio (2010 or 2012) as Windows SDK 8 no longer includes
+      the necessary build tools.
+      Finally, perform (c).
+   c) Add MSBuild executable folder 
+      (e.g., C:\Windows\Microsoft.NET\Framework\v4.0.30319)
+      to 'Path' system environment variable.
+
+10. Get ZLib (for building native ZLib support - optional)
+   a) Download and install the latest DLL version of ZLib
+        http://www.zlib.net/
+   b) Add a ZLIB_HOME system environment variable and set it to 
+      the installation's include folder (e.g., C:\zlib-1.2.8\include)
+   c) Add zlib installation folder (e.g., C:\zlib-1.2.8)
+      to 'Path' system environment variable.
+
+11. Install GnuWin32 command line tools (optional)
+   a) Download the latest version 
+        http://sourceforge.net/projects/getgnuwin32/files/
+   b) Follow the instructions in the Readme.txt file of GnuWin32
+      to install the package.
+
+12.Open a command prompt and verify all installations:
+     java -version
+     javac -version
+     mvn -version
+     ant -version
+     python --version
+     protoc --version
+     cmake --version
+     msbuild -version
+     uname -a
+
+13.Get Hadoop v2.7.0
+   Download the source code for Hadoop
+      https://hadoop.apache.org/releases.html
+   OR
+   Get the source code from the DICL GIT repository.

@@ -1,0 +1,249 @@
+#####################################################################
+# Run source code on pseudo-distributed mode
+#####################################################################
+
+# This instructions explain how to run Hadoop 2.7.0 on pseudo-distributed mode.
+
+# In order to run Hadoop, you will first need to modify the XML configuration
+# files that are present in the 'etc/hadoop' folder of the binary package.
+# However, each time you compile and package Hadoop, you get a new version 
+# of the entire binary package, including new jars, new conf files, etc.
+# Hence, any changes you made to the configuration files are lost.
+# To avoid losing your changes, you can save the configurations to a folder 
+# outside the binary package directory and 
+# (a) either copy them into 'etc/hadoop' after you run 'mvn package', or
+# (b) execute all commands using the --config option.
+# Both choices are explained below.
+
+# Setup ssh without passphrase
+#####################################################################
+# Hadoop requires that it can ssh to localhost without a passphrase.
+
+# 1. # Check it with:
+ssh localhost
+
+# 2. # If you cannot ssh to localhost without a passphrase, execute:
+ssh-keygen -t dsa -P '' -f ~/.ssh/id_dsa
+cat ~/.ssh/id_dsa.pub >> ~/.ssh/authorized_keys
+
+
+# Setup the configuration files
+#####################################################################
+
+# The GIT repository contains a folder 'sample-confs' which
+# contains all the necessary configuration files for running Hadoop
+# either on linux or windows.
+
+# Copy one folder into your own 'conf' folder. Go through all .xml and
+# .cmd files and make all necessary changes that are specific to your
+# computer (mainly, fix any absolute paths).
+
+# You will need to modify the following entries:
+# * core-site.xml
+#   + hadoop.tmp.dir: specify a local directory for temp data
+
+# * hdfs-site.xml
+#   + dfs.namenode.name.dir: specify a local directory for fsimage data
+#   + dfs.namenode.edits.dir: specify a local directory for edits data
+#   + dfs.datanode.data.dir: specify local directories for the datanode
+
+# * mapred-site.xml
+#   + most parameters here affect performance
+
+# * yarn-site.xml
+#   + yarn.nodemanager.log-dirs: specify a local directory
+#   + yarn.application.classpath: make sure the env variables are of the
+#       form $XXX for LINUX or %XXX% for WINDOWS
+
+# * hadoop-env.sh
+#   + HADOOP_LOG_DIR: a local directory for log files
+
+# * mapred-env.sh
+#   + HADOOP_MAPRED_LOG_DIR: a local directory for log files
+
+# * yarn-env.sh
+#   + YARN_LOG_DIR: a local directory for log files
+
+
+# Option A: Execute Hadoop after copying conf files into 'etc/hadoop'
+#####################################################################
+
+# 1. # Move into the deployment directory
+cd hadoop-2.7.0/hadoop-dist/target/hadoop-2.7.0
+
+# 2. # Format the HDFS file system. You only need to do this once!
+bin/hdfs namenode -format
+
+# 3. # Start the HDFS and YARN services
+sbin/start-dfs.sh
+sbin/start-yarn.sh
+sbin/mr-jobhistory-daemon.sh start historyserver
+
+# 4. # You can access the web interfaces here
+#    HDFS: http://localhost:50070
+#    YARN: http://localhost:8088/cluster
+#    History: http://localhost:19888/jobhistory
+
+# Note: ports to open on firewall OR enable the IPs
+# NN: 9000, 50070, 50090
+# DN: 50010, 50020, 50075
+# RM: 8030, 8031, 8032, 8033, 8088
+# NM: 8040, 8041, 8042, 37102, 38102
+# MR: 50030, 50060
+# JH: 10020, 10033, 19888
+
+sudo firewall-cmd --permanent --zone=public --add-port=9000/tcp --add-port=50070/tcp --add-port=50090/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=50010/tcp --add-port=50020/tcp --add-port=50075/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=8030-8033/tcp --add-port=8088/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=8040-8042/tcp --add-port=37102/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=50030/tcp --add-port=50060/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=10020/tcp --add-port=10033/tcp --add-port=19888/tcp
+sudo firewall-cmd --reload
+firewall-cmd --list-all
+
+sudo firewall-cmd --permanent --zone=public --add-rich-rule='rule family="ipv4" source address="1.2.3.4" accept'
+sudo firewall-cmd --reload
+firewall-cmd --list-all
+
+# 5. # Run TeraGen and TeraSort MapReduce jobs
+bin/yarn jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.0.jar teragen 500000 tera/in
+bin/yarn jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.0.jar terasort tera/in tera/out
+
+# ... in case the second job fails due to user permissions, run
+bin/hdfs dfs -chmod go+rx /user
+
+# 6. # Stop the HDFS and YARN services
+sbin/stop-dfs.sh
+sbin/stop-yarn.sh
+sbin/mr-jobhistory-daemon.sh stop historyserver
+
+
+# Option B: Execute Hadoop using the --config option
+#####################################################################
+
+# 1. # Move into the deployment directory
+cd hadoop-2.7.0/hadoop-dist/target/hadoop-2.7.0
+
+# 2. # Format the HDFS file system. You only need to do this once!
+bin/hdfs --config /path/to/conf namenode -format
+
+# 3. # Start the HDFS and YARN services
+sbin/hadoop-daemon.sh --config /path/to/conf start namenode
+sbin/hadoop-daemon.sh --config /path/to/conf start datanode
+sbin/yarn-daemon.sh --config /path/to/conf start resourcemanager
+sbin/yarn-daemon.sh --config /path/to/conf start nodemanager
+sbin/mr-jobhistory-daemon.sh --config /path/to/conf start historyserver
+
+# 4. # You can access the web interfaces here
+#    HDFS: http://localhost:50070
+#    YARN: http://localhost:8088/cluster
+#    History: http://localhost:19888/jobhistory
+
+# Note: ports to open on firewall OR enable the IPs
+# NN: 9000, 50070, 50090
+# DN: 50010, 50020, 50075
+# RM: 8030, 8031, 8032, 8033, 8088
+# NM: 8040, 8041, 8042, 37102, 38102
+# MR: 50030, 50060
+# JH: 10020, 10033, 19888
+
+sudo firewall-cmd --permanent --zone=public --add-port=9000/tcp --add-port=50070/tcp --add-port=50090/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=50010/tcp --add-port=50020/tcp --add-port=50075/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=8030-8033/tcp --add-port=8088/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=8040-8042/tcp --add-port=37102/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=50030/tcp --add-port=50060/tcp
+sudo firewall-cmd --permanent --zone=public --add-port=10020/tcp --add-port=10033/tcp --add-port=19888/tcp
+sudo firewall-cmd --reload
+firewall-cmd --list-all
+
+sudo firewall-cmd --permanent --zone=public --add-rich-rule='rule family="ipv4" source address="1.2.3.4" accept'
+sudo firewall-cmd --reload
+firewall-cmd --list-all
+
+# 5. # Run TeraGen and TeraSort MapReduce jobs
+bin/yarn --config /path/to/conf jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.0.jar teragen 500000 tera/in
+bin/yarn --config /path/to/conf jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.0.jar terasort tera/in tera/out
+
+# ... in case the second job fails due to user permissions, run
+bin/hdfs --config /path/to/conf dfs -chmod go+rx /user
+
+# 6. # Stop the HDFS and YARN services
+sbin/hadoop-daemon.sh --config /path/to/conf stop namenode
+sbin/hadoop-daemon.sh --config /path/to/conf stop datanode
+sbin/yarn-daemon.sh --config /path/to/conf stop resourcemanager
+sbin/yarn-daemon.sh --config /path/to/conf stop nodemanager
+sbin/mr-jobhistory-daemon.sh --config /path/to/conf stop historyserver
+
+
+#####################################################################
+# Run a second datanode on the same machine
+#####################################################################
+
+# 1. Copy your own 'conf' folder into a new folder, say 'conf2'.
+
+# 2. In 'conf2', modify the following files by changing or adding the
+#    corresponding properties. For 'dfs.datanode.data.dir', add new
+#    local directories that are different from the ones appearing in
+#    'dfs.datanode.data.dir' in 'conf/hdfs-site.xml'.
+
+#    a) hdfs-site.xml
+#    ----------------
+
+   <property>
+     <name>dfs.datanode.address</name>
+     <value>0.0.0.0:50110</value>
+   </property>
+
+   <property>
+     <name>dfs.datanode.ipc.address</name>
+     <value>0.0.0.0:50120</value>
+   </property>
+
+   <property>
+     <name>dfs.datanode.http.address</name>
+     <value>0.0.0.0:50175</value>
+   </property>
+
+   <property>
+     <name>dfs.datanode.data.dir</name>
+     <value>[DISK]file:/Yarn/dfs2/data,[SSD]file:/Yarn/dfs2/data-ssd,[MEMORY]file:/Yarn/dfs2/data-mem</value>
+   </property>
+
+
+#    b) mapred-site.xml
+#    ------------------
+
+   <property>
+     <name>mapreduce.tasktracker.http.address</name>
+     <value>0.0.0.0:50160</value>
+   </property>
+
+   <property>
+     <name>mapreduce.shuffle.port</name>
+     <value>13662</value>
+   </property>
+
+
+#    c) yarn-site.xml
+#    ----------------
+
+   <property>
+     <name>yarn.nodemanager.address</name>
+     <value>${yarn.nodemanager.hostname}:38112</value>
+   </property>
+
+   <property>
+     <name>yarn.nodemanager.localizer.address</name>
+     <value>${yarn.nodemanager.hostname}:8140</value>
+   </property>
+
+   <property>
+     <name>yarn.nodemanager.webapp.address</name>
+     <value>${yarn.nodemanager.hostname}:8142</value>
+   </property>
+
+
+# 3. Start the HDFS and YARN slave services using 'conf2'
+sbin/hadoop-daemon.sh --config /path/to/conf2 start datanode
+sbin/yarn-daemon.sh --config /path/to/conf2 start nodemanager
+

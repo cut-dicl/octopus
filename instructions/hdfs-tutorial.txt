@@ -1,0 +1,81 @@
+# ==============================================
+# Initial HDFS setup
+# ==============================================
+
+Before running HDFS for the first time, you will need to
+specify several parameters in the hdfs-site.xml
+
+** dfs.namenode.name.dir
+   Specify a local directory for fsimage data
+
+** dfs.namenode.edits.dir
+   Specify a local directory for edits data
+
+** dfs.datanode.data.dir
+   Specify local directories for the datanode, on which it
+   stores the actual data. This is a comma-delimited list
+   and each directory is typically mounted on a different device.
+   You can specify the type of device (Hard disk or SSD) by
+   prefexing the directory with [DISK] or [SSD], respectively.
+   Example: 
+   <value>[DISK]/path/to/disk/dir,[SSD]/path/to/ssd/dir</value>
+
+   If you want to explicitly store data in memory as well, then
+   add a [MEMORY] tag in front of any directory on any device.
+   This directory will only be used for storing some basic metadata.
+   Example: 
+   <value>[DISK]/path/to/disk/dir,[SSD]/path/to/ssd/dir,
+          [MEMORY]/path/to/some/dir</value>
+
+** dfs.datanode.memory.capacity.mb
+   This represents the maximum memory a datanode can use for storing
+   data in MB. It is used only when you specify a [MEMORY] directory
+   in dfs.datanode.data.dir
+
+After you are done with the configuration, you will need to
+format the filesystem. This is only done once!
+   bin/hdfs namenode -format
+
+# ==============================================
+# Useful HDFS commands
+# ==============================================
+
+# Create a new directory '/foo'
+bin/hdfs dfs -mkdir /foo
+
+# List files and directories under a directory
+bin/hdfs dfs -ls /foo
+
+# Delete an existing empty directory
+bin/hdfs dfs -rmdir /foo
+
+# Copy a local file into HDFS
+bin/hdfs dfs -put localfile.txt /foo/file.txt
+
+# You can optionally specify the storage media for storing 
+# the file. You current options are DISK, SSD, MEMORY and
+# their shorthand notations: D, S, M
+# If you are running on pseudo-distributed mode, you can
+# only specify one storage media with replication 1
+bin/hdfs dfs -put -r "SSD=1" localfile.txt /foo/file.txt
+bin/hdfs dfs -put -r "D=1,M=1" localfile.txt /foo/file.txt
+
+# Change the replication vector of an existing file
+bin/hdfs dfs -setrep "D=1,S=1" /foo/file.txt
+
+# Copy a file from HDFS into local storage
+bin/hdfs dfs -get /foo/file.txt somefile.txt
+
+# Delete a file from HDFS
+bin/hdfs dfs -rm /foo/file.txt
+
+# List all available commands
+bin/hdfs dfs 
+
+# Get HDFS usage statistics
+bin/hdfs dfsadmin -report
+
+# Web interface
+http://localhost:50070/dfshealth.html
+
+

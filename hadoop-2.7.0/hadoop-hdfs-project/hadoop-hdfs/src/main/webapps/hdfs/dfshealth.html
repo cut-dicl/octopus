@@ -1,0 +1,1043 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+   
+   	EDITED BY: Nicolas Karmiris
+ 	For the purpose of extending the existing WebInterface of HadoopFS to a new
+ 	inteface that implements the functionalities of the new OctapusFS.
+ 	Cyprus University of Technology, 2017
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=9" />
+<link rel="stylesheet" type="text/css" href="/static/bootstrap-3.0.2/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="/static/hadoop.css" />
+<link rel="stylesheet" type="text/css" href="style/dfsstyle.css"/>
+<title>Namenode information</title>
+</head>
+<body>
+
+<header class="navbar navbar-inverse bs-docs-nav" role="banner">
+<div class="container">
+  <div class="navbar-header">
+    <div class="navbar-brand">Hadoop | OctopusFS</div>
+  </div>  
+
+  <ul class="nav navbar-nav" id="ui-tabs">
+    <li><a href="#tab-overview">Overview</a></li>
+    <li><a href="#tab-datanode">Datanodes</a></li>
+    <li><a href="#tab-datanode-volume-failures">Datanode Volume Failures</a></li>
+    <li><a href="#tab-snapshot">Snapshot</a></li>
+    <li><a href="#tab-startup-progress">Startup Progress</a></li>
+    <li class="dropdown">
+      <a href="#" class="dropdown-toggle" data-toggle="dropdown">Utilities <b class="caret"></b></a>
+      <ul class="dropdown-menu">
+        <li><a href="explorer.html">Browse the file system</a></li>
+        <li><a href="logs">Logs</a></li>
+      </ul>
+    </li>
+    <li><a href="#tab-storage-tiers">Storage Tiers</a></li>
+    <li><a href="#tab-caching">Caching</a></li>
+  </ul>
+</div>
+</header>
+
+<div class="container">
+
+<div id="alert-panel">
+  <div class="alert alert-danger">
+    <button type="button" class="close" onclick="$('#alert-panel').hide();">&times;</button>
+    <div class="alert-body" id="alert-panel-body"></div>
+  </div>
+</div>
+
+<div class="tab-content">
+  <div class="tab-pane" id="tab-overview"></div>
+  <div class="tab-pane" id="tab-datanode"></div>
+  <div class="tab-pane" id="tab-datanode-volume-failures"></div>
+  <div class="tab-pane" id="tab-snapshot"></div>
+  <div class="tab-pane" id="tab-startup-progress"></div>
+  <div class="tab-pane" id="tab-storage-tiers"></div>
+  <div class="tab-pane" id="tab-caching"></div>
+</div>
+
+<div class="row">
+  <hr />
+  <div class="col-xs-2"><p>Hadoop, 2014.</p></div>
+</div>
+</div>
+
+<script type="text/x-dust-template" id="tmpl-dfshealth">
+
+{#nn}
+{@if cond="{DistinctVersionCount} > 1 || '{RollingUpgradeStatus}'.length || !'{UpgradeFinalized}'"}
+<div class="alert alert-dismissable alert-info">
+  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+
+  {#RollingUpgradeStatus}
+    <p>Rolling upgrade started at {#helper_date_tostring value="{startTime}"/}. </br>
+    {#createdRollbackImages}
+      Rollback image has been created. Proceed to upgrade daemons.
+      {:else}
+      Rollback image has not been created.
+    {/createdRollbackImages}
+    </p>
+  {/RollingUpgradeStatus}
+
+  {@if cond="{DistinctVersionCount} > 1"}
+    There are {DistinctVersionCount} versions of datanodes currently live:
+    {#DistinctVersions}
+    {key} ({value}) {@sep},{/sep}
+    {/DistinctVersions}
+  {/if}
+
+  {^UpgradeFinalized}
+     <p>Upgrade in progress. Not yet finalized.</p>
+  {/UpgradeFinalized}
+</div>
+{/if}
+
+{@if cond="{NumberOfMissingBlocks} > 0"}
+<div class="alert alert-dismissable alert-warning">
+  <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+
+  <p>There are {NumberOfMissingBlocks} missing blocks. The following files may be corrupted:</p>
+  <br/>
+  <div class="well">
+    {#CorruptFiles}
+    {.}<br/>
+    {/CorruptFiles}
+  </div>
+  <p>Please check the logs or run fsck in order to identify the missing blocks. See the Hadoop FAQ for common causes and potential solutions.</p>
+</div>
+{/if}
+{/nn}
+
+<div class="page-header"><h1>Overview {#nnstat}<small>'{HostAndPort}' ({State})</small>{/nnstat}</h1></div>
+
+<table class="table table-bordered table-striped">
+{#HAInfo}
+  <tr><th>Namespace:</th><td>{Namespace}</td></tr>
+  <tr><th>Namenode ID:</th><td>{NamenodeID}</td></tr>
+{/HAInfo}
+{#nn}
+  <tr><th>Started:</th><td>{NNStarted}</td></tr>
+  <tr><th>Version:</th><td>{Version}</td></tr>
+  <tr><th>Compiled:</th><td>{CompileInfo}</td></tr>
+  <tr><th>Cluster ID:</th><td>{ClusterId}</td></tr>
+  <tr><th>Block Pool ID:</th><td>{BlockPoolId}</td></tr>
+{/nn}
+</table>
+
+<div class="page-header"><h1>Summary</h1></div>
+<p>
+  Security is {#nnstat}{#SecurityEnabled}on{:else}off{/SecurityEnabled}{/nnstat}.</p>
+<p>{#nn}{#Safemode}{.}{:else}Safemode is off.{/Safemode}{/nn}</p>
+
+<p>
+  {#fs}
+  {FilesTotal} files and directories, {BlocksTotal} blocks = {@math key="{FilesTotal}" method="add" operand="{BlocksTotal}"/} total filesystem object(s).
+  {#helper_fs_max_objects/}
+  {/fs}
+</p>
+{#mem.HeapMemoryUsage}
+<p>Heap Memory used {used|fmt_bytes} of {committed|fmt_bytes} Heap Memory. Max Heap Memory is {max|fmt_bytes}. </p>
+{/mem.HeapMemoryUsage}
+
+{#mem.NonHeapMemoryUsage}
+<p>Non Heap Memory used {used|fmt_bytes} of {committed|fmt_bytes} Commited Non Heap Memory. Max Non Heap Memory is {max|fmt_bytes}. </p>
+{/mem.NonHeapMemoryUsage}
+
+{#nn}
+<table class="table table-bordered table-striped">
+  <tr><th> Configured Capacity:</th><td>{Total|fmt_bytes}</td></tr>
+  <tr><th> DFS Used:</th><td>{Used|fmt_bytes} ({PercentUsed|fmt_percentage})</td></tr>
+  <tr><th> Non DFS Used:</th><td>{NonDfsUsedSpace|fmt_bytes}</td></tr>
+  <tr><th> DFS Remaining:</th><td>{Free|fmt_bytes} ({PercentRemaining|fmt_percentage})</td></tr>
+  <tr><th> Configured Cache Capacity:</th><td>{CacheCapacity|fmt_bytes}</td></tr>
+  <tr><th> Cache Used:</th><td>{CacheUsed|fmt_bytes}</td></tr>
+  <tr><th> Block Pool Used:</th><td>{BlockPoolUsedSpace|fmt_bytes} ({PercentBlockPoolUsed|fmt_percentage})</td></tr>
+  <tr><th> DataNodes usages% (Min/Median/Max/stdDev): </th>
+	<td>{#NodeUsage.nodeUsage}{min} / {median} / {max} / {stdDev}{/NodeUsage.nodeUsage}</td></tr>
+{/nn}
+
+{#fs}
+  <tr><th><a href="#tab-datanode">Live Nodes</a></th><td>{NumLiveDataNodes} (Decommissioned: {NumDecomLiveDataNodes})</td></tr>
+  <tr><th><a href="#tab-datanode">Dead Nodes</a></th><td>{NumDeadDataNodes} (Decommissioned: {NumDecomDeadDataNodes})</td></tr>
+  <tr><th><a href="#tab-datanode">Decommissioning Nodes</a></th><td>{NumDecommissioningDataNodes}</td></tr>
+  <tr><th><a href="#tab-datanode-volume-failures">Total Datanode Volume Failures</a></th><td>{VolumeFailuresTotal} ({EstimatedCapacityLostTotal|fmt_bytes})</td></tr>
+  <tr><th title="Excludes missing blocks.">Number of Under-Replicated Blocks</th><td>{UnderReplicatedBlocks}</td></tr>
+  <tr><th>Number of Blocks Pending Deletion</th><td>{PendingDeletionBlocks}</td></tr>
+  <tr><th>Block Deletion Start Time</th><td>{BlockDeletionStartTime|date_tostring}</td></tr>
+{/fs}
+</table>
+
+<div class="page-header"><h1>NameNode Journal Status</h1></div>
+<p><b>Current transaction ID:</b> {nn.JournalTransactionInfo.LastAppliedOrWrittenTxId}</p>
+<table class="table" title="NameNode Journals">
+  <thead>
+	<tr><th>Journal Manager</th><th>State</th></tr>
+  </thead>
+  <tbody>
+	{#nn.NameJournalStatus}
+	<tr><td>{manager}</td><td>{stream}</td></tr>
+	{/nn.NameJournalStatus}
+  </tbody>
+</table>
+
+<div class="page-header"><h1>NameNode Storage</h1></div>
+<table class="table" title="NameNode Storage">
+  <thead><tr><td><b>Storage Directory</b></td><td><b>Type</b></td><td><b>State</b></td></tr></thead>
+  {#nn.NameDirStatuses}
+  {#active}{#helper_dir_status type="Active"/}{/active}
+  {#failed}{#helper_dir_status type="Failed"/}{/failed}
+  {/nn.NameDirStatuses}
+</table>
+</script>
+
+<script type="text/x-dust-template" id="tmpl-snapshot">
+<div class="page-header"><h1>Snapshot Summary</h1></div>
+<div class="page-header"><h1><small>Snapshottable directories: {@size key=SnapshottableDirectories}{/size}</small></div>
+<small>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Path</th>
+      <th>Snapshot Number</th>
+      <th>Snapshot Quota</th>
+      <th>Modification Time</th>
+      <th>Permission</th>
+      <th>Owner</th>
+      <th>Group</th>
+    </tr>
+  </thead>
+  {#SnapshottableDirectories}
+  <tr>
+    <td>{path}</td>
+    <td>{snapshotNumber}</td>
+    <td>{snapshotQuota}</td>
+    <td>{modificationTime|date_tostring}</td>
+    <td>{permission|helper_to_permission}</td>
+    <td>{owner}</td>
+    <td>{group}</td>
+  </tr>
+  {/SnapshottableDirectories}
+</table>
+</small>
+
+<div class="page-header"><h1><small>Snapshotted directories: {@size key=Snapshots}{/size}</small></div>
+
+<small>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Snapshot ID</th>
+      <th>Snapshot Directory</th>
+      <th>Modification Time</th>
+    </tr>
+  </thead>
+  {#Snapshots}
+  <tr>
+    <td>{snapshotID}</td>
+    <td>{snapshotDirectory}</td>
+    <td>{modificationTime|date_tostring}</td>
+  </tr>
+  {/Snapshots}
+</table>
+</small>
+</script>
+
+<script type="text/x-dust-template" id="tmpl-datanode">
+<div class="page-header"><h1>Datanode Information</h1></div>
+<div class="page-header"><h1><small>In operation</small></h1></div>
+<small>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Node</th>
+      <th>Last contact</th>
+      <th>Admin State</th>
+      <th>Capacity</th>
+      <th>Used</th>
+      <th>Non DFS Used</th>
+      <th>Remaining</th>
+      <th>Blocks</th>
+      <th>Block pool used</th>
+      <th>Failed Volumes</th>
+      <th>Version</th>
+	  <th>Cache Capacity</th>
+	  <th>Cache Used</th>
+    </tr>
+  </thead>
+  {#LiveNodes}
+  <tr>
+    <td>{name} ({xferaddr})</td>
+    <td>{lastContact}</td>
+    <td>{adminState}</td>
+    <td>{capacity|fmt_bytes}</td>
+    <td>{used|fmt_bytes}</td>
+    <td>{nonDfsUsedSpace|fmt_bytes}</td>
+    <td>{remaining|fmt_bytes}</td>
+    <td>{numBlocks}</td>
+    <td>{blockPoolUsed|fmt_bytes} ({blockPoolUsedPercent|fmt_percentage})</td>
+    <td>{volfails}</td>
+    <td>{version}</td>
+	<td>{CacheCapacity|fmt_bytes}</td>
+	<td>{CacheUsed|fmt_bytes}</td>
+  </tr>
+  {/LiveNodes}
+  {#DeadNodes}
+  <tr class="danger">
+    <td>{name} ({xferaddr})</td>
+    <td>{#helper_lastcontact_tostring value="{lastContact}"/}</td>
+    <td>Dead{?decommissioned}, Decommissioned{/decommissioned}</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+    <td>-</td>
+  </tr>
+  {/DeadNodes}
+</table>
+</small>
+
+<div class="page-header"><h1><small>Decomissioning</small></h1></div>
+<small>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Node</th>
+      <th>Last contact</th>
+      <th>Under replicated blocks</th>
+      <th>Blocks with no live replicas</th>
+      <th>Under Replicated Blocks <br/>In files under construction</th>
+    </tr>
+  </thead>
+  {#DecomNodes}
+  <tr>
+    <td>{name} ({xferaddr})</td>
+    <td>{lastContact}</td>
+    <td>{underReplicatedBlocks}</td>
+    <td>{decommissionOnlyReplicas}</td>
+    <td>{underReplicateInOpenFiles}</td>
+  </tr>
+  {/DecomNodes}
+</table>
+</small>
+</script>
+
+<script type="text/x-dust-template" id="tmpl-datanode-volume-failures">
+<div class="page-header"><h1>Datanode Volume Failures</h1></div>
+<small>
+{?LiveNodes}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Node</th>
+      <th>Last Failure Date</th>
+      <th>Failed Volumes</th>
+      <th>Estimated Capacity Lost</th>
+      <th>Failed Storage Locations</th>
+    </tr>
+  </thead>
+  {#LiveNodes}
+  <tr>
+    <td>{name} ({xferaddr})</td>
+    <td>{#helper_date_tostring value="{lastVolumeFailureDate}"/}</td>
+    <td>{volfails}</td>
+    <td>{estimatedCapacityLostTotal|fmt_bytes}</td>
+    <td>{#failedStorageLocations}{.}{@sep}<br />{/sep}{/failedStorageLocations}</td>
+  </tr>
+  {/LiveNodes}
+</table>
+{:else}
+There are no reported volume failures.
+{/LiveNodes}
+</small>
+</script>
+
+<script type="text/x-dust-template" id="tmpl-startup-progress">
+<div class="page-header"><h1>Startup Progress</h1></div>
+<p>Elapsed Time: {elapsedTime|fmt_time}, Percent Complete: {percentComplete|fmt_percentage}</p>
+<table class="table">
+  <thead>
+	<tr class="active">
+	  <th>Phase</th>
+	  <th style="text-align:center">Completion</th>
+	  <th style="text-align:center">Elapsed Time</th>
+	</tr>
+  </thead>
+  <tbody>
+	{#phases}
+	<tr class="phase">
+	  <td class="startupdesc">{desc} {file} {size|fmt_bytes}</td>
+	  <td style="text-align:center">{percentComplete|fmt_percentage}</td>
+	  <td style="text-align:center">{elapsedTime|fmt_time}</td>
+	</tr>
+	{#steps root_file=file}
+	<tr class="step">
+	  <td class="startupdesc">{stepDesc} {stepFile} {stepSize|fmt_bytes} ({count}/{total})</td>
+	  <td style="text-align:center">{percentComplete|fmt_percentage}</td>
+	  <td></td>
+	</tr>
+	{/steps}
+	{/phases}
+  </tbody>
+</table>
+</script>
+
+<script type="text/x-dust-template" id="tmpl-storage-tiers">
+	<div class="page-header"><h1>Storage Tiers</h1></div>
+	<br />
+	<div class="contain-all">
+		<ul class="tab-choice">			
+			<li class="tab-choice-links"><a href="javascript:void(0)" class="tablink" onclick="openTab(event, 'Tiers')">Navigate through Tiers</a></li>
+			<li class="tab-choice-links"><a href="javascript:void(0)" class="tablink" onclick="openTab(event, 'Nodes')">Navigate through Nodes</a></li>
+		</ul>
+		<div id="Nodes" class="tabcontent">
+			<br />
+  			<label>Select a node: </label>&nbsp&nbsp	
+			<select id="dropdown">
+				<option selected="selected" value="Select One">Select One</option>
+			</select>
+			<div id="node-info-head" class="page-header"><h1><small>Overall Node Information</small></h1></div>
+				<table class="table table-bordered table-striped">
+					<tr>
+						<th> Configured Capacity:</th>
+						<td id="capacity" class="node-info clear" align="left"></td>
+					</tr>
+					<tr>
+						<th> DFS Used:</th>
+						<td id="used" class="clear" align="left"></td>
+					</tr>
+  					<tr>
+  						<th> Non DFS Used:</th>
+  						<td id="nonUsed" class="clear" align="left"></td>
+  					</tr>
+  					<tr>
+  						<th> DFS Remaining:</th>
+  						<td id="dfsRemaining" class="clear" align="left"></td>
+  					</tr>
+  					<tr>
+  						<th> Configured Cache Capacity:</th>
+  						<td id="confCache" class="clear" align="left"></td>
+  					</tr>
+  					<tr>
+  						<th> Cache Used:</th>
+  						<td id="cacheUsed" class="clear" align="left"></td>
+  					</tr>
+  					<tr>
+  						<th> Cache Remaining:</th>
+  						<td id="cacheRemaining" class="clear" align="left"></td>
+  					</tr>
+				</table>
+			<div class="page-header"><h1><small>Tier Information</small></h1></div>
+			<table class="table" id="table-for-showing-tiers">    			
+			</table>
+		</div>
+		<div id="Tiers" class="tabcontent">
+			<br />
+  			<label>Select a tier: </label>&nbsp&nbsp	
+			<select id="storage-dropdown">
+				<option value="Select One">Select One</option>
+				<option value="MEMORY">MEMORY</option>
+				<option value="RAM_DISK">RAM_DISK</option>
+				<option value="SSD_H">SSD_H</option>
+				<option value="SSD">SSD</option>
+				<option value="DISK_H">DISK_H</option>
+				<option value="DISK">DISK</option>
+				<option value="ARCHIVE">ARCHIVE</option>
+				<option value="REMOTE">REMOTE</option>		
+			</select>
+			<br />
+			<div id="node-info-head" class="page-header"><h1><small>Overall Storage Tier Information</small></h1></div>
+				<table class="table table-bordered table-striped">
+					<tr>
+						<th> Total Tier Configured Capacity:</th>
+						<td id="storage-capacity" class="clear-tier" align="left"></td>
+					</tr>
+					<tr>
+						<th> Total Tier DFS Used:</th>
+						<td id="storage-used" class="clear-tier" align="left"></td>
+					</tr>  					
+  					<tr>  						
+  						<th> Total Tier DFS Remaining:</th>
+  						<td id="storage-dfsRemaining" class="clear-tier" align="left"></td>
+  					</tr>
+  					<tr>
+  						<th> Total Tier Configured Cache Capacity:</th>
+  						<td id="storage-cache" class="clear-tier" align="left"></td>
+  					</tr>
+  					<tr>
+  						<th> Total Tier Cache Used:</th>
+  						<td id="storage-cacheUsed" class="clear-tier" align="left"></td>
+  					</tr>
+  					<tr>
+  						<th> Total Tier Cache Remaining:</th>
+  						<td id="storage-cacheRemaining" class="clear-tier" align="left"></td>
+  					</tr>
+				</table>				
+			<div class="page-header"><h1><small>Live Nodes</small></h1></div>
+			<table id="tier-nodes-table" class="table table-bordered table-striped">
+				<tr class="tier-nodes-table-row">
+					<th class="tier-nodes-table-row" align="center">Node</th>					
+					<th class="tier-nodes-table-row" align="center">Total Tier Capacity</th>
+					<th class="tier-nodes-table-row" align="center">Total DFS Used</th>
+					<th class="tier-nodes-table-row" align="center">Total DFS Remaining</th>
+					<th class="tier-nodes-table-row" align="center">Total Tier Cache Capacity</th>
+					<th class="tier-nodes-table-row" align="center">Total Cache Used</th>
+					<th class="tier-nodes-table-row" align="center">Total Cache Remaining</th>					
+					<th></th>
+				</tr>								
+			</table>
+			<div id="myPopup" class="popup">
+				<div class="popup-content">
+					<span class="close">&times;</span>
+    				<div class="page-header"><h1 id="node"><small></small></h1></div>
+    				<p id="type"></p>
+    				<div class="node-content">
+    					<table class="table table-bordered table-striped popup-table" id="node-type-table">
+    						<tr>
+    							<th>StorageID</th>
+    							<th>Configured Capacity</th>
+    							<th>DFS Used</th>
+    							<th>DFS Remaining</th>
+    							<th>Configured Cache Capacity</th>
+    							<th>Cache Used</th>
+    							<th>Cache Remaining</th>
+    						</tr>
+    					</table>
+    					<div class="totals-container">    						
+    						<table class="total-metrics-table">
+    							<tr>
+    								<th class="table-header" colspan="4"><h3>Tier Totals</h3></th>
+    							</tr>
+    							<tr>
+    								<th>Capacity:</th>
+    								<td id="tot_cap_tier">></td>
+    								<th>Cache Capacity:</th>
+    								<td id="tot_cache_cap"></td>
+    							</tr>
+    							<tr>
+    								<th>DFS Used:</th>
+    								<td id="tot_dfs_used"></td>
+    								<th>Cache Used:</th>
+    								<td id="tot_cache_used"></td>
+    							</tr>
+    							<tr>
+    								<th>DFS Remaining:</th>
+    								<td id="tot_dfs_rem"></td>
+    								<th>Cache Remaining:</th>
+    								<td id="tot_cache_rem"></td>
+    							</tr>
+    						</table>    						
+    					</div>
+    				</div>	
+  				</div>
+			</div>
+		</div>
+	</div>
+</script>
+
+<script type="text/x-dust-template" id="tmpl-caching">
+	<div class="page-header"><h1>Cache Pools and Directives</h1></div>
+	<div class="alert alert-danger" id="alert-panel-cache" style="display:none">
+		<button type="button" class="close" onclick="$('#alert-panel-cache').hide();">&times;</button>
+		<div class="alert-body" id="alert-panel-cache-body"></div>
+    </div>
+    <div class="dropdown-container">
+		<label>Now showing: </label>&nbsp;
+		<select id="pools-dropdown">
+			<option selected="selected" value="All">All</option>
+		</select>
+	</div>
+	<div class="page-header"><h1><small>Cache Pools</small></h1></div>
+	<br />
+	<div class="cache-pools-content">
+		<div class="pool-table-cont">
+			<table class="table table-bordered table-striped" id="cache-pools-table">
+				<th>Name</th>
+    			<th>Owner</th>
+    			<th>Group</th>
+    			<th>Mode</th>
+    			<th>MaxTTL</th>
+    			<th>Type</th>
+    			<th>Limit</th>
+    			<th>Bytes Needed</th>
+    			<th>Bytes Cached</th>
+    			<th>Bytes OverLimit</th>
+    			<th></th>
+			</table>
+		</div>
+		<div class="button-cont">
+			<button class="add-button" id="add-pool-button">Add Pool</button>&nbsp;&nbsp;
+		</div>
+		<div class="popup add-pool" id="add-pool-popup">
+			<div class="popup-content add-pool-content">
+				<span class="close" id="close-add-pool">&times;</span>
+				<div class="page-header"><h1><small>Add Cache Pool</small></h1></div>
+				<div class="pool-wrapper">
+					<form id="add-pool-form">
+						<label class="pool-label">Enter Pool Name:</label>&nbsp;					
+						<input type="text" id="add-pool-name" class="reset-add-pool"/><br />
+						<div class="error-msg" id="error-name"></div>
+						<label class="pool-label">Pool Owner:</label>&nbsp;
+						<input type="text" id="pool-owner" disabled><br />
+						<label class="pool-label">Group:</label>&nbsp;
+						<input type="text" id="pool-group" disabled><br />
+						<label class="pool-label">Pool Mode:</label>&nbsp;
+						<input type="text" id="pool-mode" disabled /><br />	
+						<label class="pool-label max-ttl">MaxTTL:</label>&nbsp;
+						<input type"text" pattern="[0-9]+" title="Numerical values only" placeholder="Never" id="add-pool-ttl" class="input-ttl"/>&nbsp;
+						<select id="add-pool-ttl-dropdown">
+							<option value="s" id="add-sec">Seconds</option>
+							<option value="m" id="add-min">Minutes</option>
+							<option value="h" selected="selected" id="add-hour">Hours</option>
+							<option value="d" id="add-days">Days</option>
+						</select>
+						<br />				
+						<label>Select Type and Limit:</label><br /><br />
+						<div class="table-wrapper">
+							<table class="add-pool-bytes" id="type-add-pool-table">
+							<tr class="td-add">
+								<th class="td-add" align="center">Type</th>
+								<th class="td-add" align="center">Limit</th>
+							</tr>
+							<tr class="clear-stor-pool td-add" id="memory-line-add-pool">
+								<td class="td-add" id="M">MEMORY</td>
+								<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="reset-add-pool" id="MEMORY-bytes" /></td>
+								<td>
+									<select class="add-pool-bytes-dropdown">
+										<option value="KB" id="MEMORY-kb">KB</option>
+										<option selected="selected" value="MB" id="MEMORY-mb">MB</option>
+										<option value="GB" id="MEMORY-gb">GB</option>
+									</select>										
+								</td>
+							</tr>
+							<tr class="clear-stor-pool td-add" id="ram-disk-line-add-pool">
+								<td class="td-add" id="RD">RAM_DISK</td>
+								<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="reset-add-pool" id="RAM_DISK-bytes" /></td>
+								<td>
+									<select class="add-pool-bytes-dropdown">
+										<option value="KB" id="RAM_DISK-kb">KB</option>
+										<option selected="selected" value="MB" id="RAM_DISK-mb">MB</option>
+										<option value="GB" id="RAM_DISK-gb">GB</option>
+									</select>
+								</td>
+							</tr>
+							<tr class="clear-stor-pool td-add" id="ssd-h-line-add-pool">
+								<td class="td-add" id="SH">SSD_H</td>
+								<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="reset-add-pool" id="SSD_H-bytes" /></td>
+								<td>
+									<select class="add-pool-bytes-dropdown">
+										<option value="KB" id="SSD_H-kb"></option>
+										<option selected="selected" value="MB" id="SSD_H-mb">MB</option>
+										<option value="GB" id="SSD_H-gb">GB</option>
+									</select>
+								</td>
+							</tr>							
+							<tr class="clear-stor-pool td-add" id="ssd-line-add-pool">
+								<td class="td-add" id="S">SSD</td>
+								<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="reset-add-pool" id="SSD-bytes" /></td>
+								<td>
+									<select class="add-pool-bytes-dropdown">
+										<option value="KB" id="SSD-kb">KB</option>
+										<option selected="selected" value="MB" id="SSD-mb">MB</option>
+										<option value="GB" id="SSD-gb">GB</option>
+									</select>
+								</td>
+							</tr>
+							<tr class="clear-stor-pool td-add" id="disk-h-line-add-pool">
+								<td class="td-add" id="DH">DISK_H</td>
+								<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="reset-add-pool" id="DISK_H-bytes" /></td>
+								<td>
+									<select class="add-pool-bytes-dropdown">
+										<option value="KB" id="DISK_H-kb"></option>
+										<option selected="selected" value="MB" id="DISK_H-mb">MB</option>
+										<option value="GB" id="DISK_H-gb">GB</option>
+									</select>
+								</td>
+							</tr>
+							<tr class="clear-stor-pool td-add" id="disk-line-add-pool">
+								<td class="td-add" id="D">DISK</td>
+								<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="reset-add-pool" id="DISK-bytes" /></td>
+								<td>
+									<select class="add-pool-bytes-dropdown">
+										<option value="KB" id="DISK-kb">KB</option>
+										<option selected="selected" value="MB" id="DISK-mb">MB</option>
+										<option value="GB" id="DISK-gb">GB</option>
+									</select>
+								</td>
+							</tr>
+							<tr class="clear-stor-pool td-add" id="archive-line-add-pool">
+								<td class="td-add" id="A">ARCHIVE</td>
+								<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="reset-add-pool" id="ARCHIVE-bytes" /></td>
+								<td>
+									<select class="add-pool-bytes-dropdown">
+										<option value="KB" id="ARCHIVE-kb">KB</option>
+										<option selected="selected" value="MB" id="ARCHIVE-mb">MB</option>
+										<option value="GB" id="ARCHIVE-gb">GB</option>
+									</select>
+								</td>
+							</tr>
+							<tr class="clear-stor-pool td-add" id="remote-line-add-pool">
+								<td class="td-add" id="R">REMOTE</td>
+								<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="reset-add-pool" id="REMOTE-bytes" /></td>
+								<td>
+									<select class="add-pool-bytes-dropdown">
+										<option value="KB" id="REMOTE-kb">KB</option>
+										<option selected="selected" value="MB" id="REMOTE-mb">MB</option>
+										<option value="GB" id="REMOTE-gb">GB</option>
+									</select>
+								</td>
+							</tr>
+						</table>
+						</div>
+					</form>					
+					<br />
+					<input type="submit" class="add-button" id="ok-add-pool" value="Add Pool" />					
+					<div class="error-msg" id="error-field"></div>
+					<div class="alert alert-danger" id="alert-panel-add-pool" style="display:none">
+						<button type="button" class="close" onclick="$('#alert-panel-add-pool').hide();">&times;</button>
+						<div class="alert-body" id="alert-panel-body-add-pool"></div>
+      				</div>
+ 				</div>
+			</div>
+		</div>
+		<div class="popup" id="modify-pool-popup">
+			<div class="popup-content modify-pool-content">
+				<span class="close" id="close-modify-pool">&times;</span>
+				<div class="page-header"><h1><small>Modify Cache Pool</small></h1></div>
+				<div class="pool-wrapper">					
+					<label class="pool-label">Pool Name:</label>&nbsp;					
+					<input type="text" id="edit-pool-name" disabled="disabled"/><br />
+					<label class="pool-label">Pool Owner:</label>&nbsp;
+					<input type="text" id="edit-pool-owner" disabled><br />
+					<label class="pool-label">Group:</label>&nbsp;
+					<input type="text" id="edit-pool-group" disabled><br />
+					<label class="pool-label">Pool Mode:</label>&nbsp;
+					<input type="text" id="edit-pool-mode" disabled /><br />
+					<label class="pool-label max-ttl">MaxTTL:</label>&nbsp;
+					<input type"text" pattern="[0-9]+" title="Numerical values only" placeholder="Never" id="edit-pool-ttl" class="input-ttl" />&nbsp;
+					<select id="edit-pool-ttl-dropdown">
+						<option value="s" id="edit-sec">Seconds</option>
+						<option value="m" id="edit-min">Minutes</option>
+						<option value="h" id="edit-hour">Hours</option>
+						<option value="d" id="edit-days">Days</option>
+					</select>
+					<br />	
+					<label>Select type and bytes:</label><br />
+					<div class="table-wrapper">
+						<table class="add-pool-bytes" id="type-modify-pool-table">
+						<tr class="td-add">
+							<th class="td-add" align="center">Type</th>
+							<th class="td-add" align="center">Limit</th>
+						</tr>
+						<tr class="reset" id="memory-line-mod-pool">
+							<td id="id-MEMORY">MEMORY</td>
+							<td><input type="text" pattern="[0-9]+" title="Numerical values only" id="limit-MEMORY" /></td>
+							<td>
+								<select class="mod-pool-bytes-dropdown">
+									<option value="KB" id="MEMORY-kb-mod">KB</option>
+									<option selected="selected" value="MB" id="MEMORY-mb-mod">MB</option>
+									<option value="GB" id="MEMORY-gb-mod">GB</option>
+								</select>
+							</td>
+						</tr>
+						<tr class="reset" id="ram-disk-line-mod-pool">
+							<td id="id-RAM_DISK">RAM_DISK</td>
+							<td><input type="text" pattern="[0-9]+" title="Numerical values only" id="limit-RAM_DISK" /></td>
+							<td>
+								<select class="mod-pool-bytes-dropdown">
+									<option value="KB" id="RAM_DISK-kb-mod">KB</option>
+									<option selected="selected" value="MB" id="RAM_DISK-mb-mod">MB</option>
+									<option value="GB" id="RAM_DISK-gb-mod">GB</option>
+								</select>
+							</td>
+						</tr>
+						<tr class="reset" id="ssd-h-line-mod-pool">
+							<td id="id-SSD_H">SSD_H</td>
+							<td><input type="text" pattern="[0-9]+" title="Numerical values only" id="limit-SSD_H" /></td>
+							<td>
+								<select class="mod-pool-bytes-dropdown">
+									<option value="KB" id="SSD_H-kb-mod">KB</option>
+									<option selected="selected" value="MB" id="SSD_H-mb-mod">MB</option>
+									<option value="GB" id="SSD_H-gb-mod">GB</option>
+								</select>
+							</td>
+						</tr>
+						<tr class="reset" id="ssd-line-mod-pool">
+							<td id="id-SSD">SSD</td>
+							<td><input type="text" pattern="[0-9]+" title="Numerical values only" id="limit-SSD" /></td>
+							<td>
+								<select class="mod-pool-bytes-dropdown">
+									<option value="KB" id="SSD-kb-mod">KB</option>
+									<option selected="selected" value="MB" id="SSD-mb-mod">MB</option>
+									<option value="GB" id="SSD-gb-mod">GB</option>
+								</select>
+							</td>
+						</tr>
+						<tr class="reset" id="disk-h-line-mod-pool">
+							<td id="id-DISK_H">DISK_H</td>
+							<td><input type="text" pattern="[0-9]+" title="Numerical values only" id="limit-DISK_H" /></td>
+							<td>
+								<select class="mod-pool-bytes-dropdown">
+									<option value="KB" id="DISK_H-kb-mod">KB</option>
+									<option selected="selected" value="MB" id="DISK_H-mb-mod">MB</option>
+									<option value="GB" id="DISK_H-gb-mod">GB</option>
+								</select>
+							</td>
+						</tr>
+						<tr class="reset" id="disk-line-mod-pool">
+							<td id="id-DISK">DISK</td>
+							<td><input type="text" pattern="[0-9]+" title="Numerical values only" id="limit-DISK" /></td>
+							<td>
+								<select class="mod-pool-bytes-dropdown">
+									<option value="KB" id="DISK-kb-mod">KB</option>
+									<option selected="selected" value="MB" id="DISK-mb-mod">MB</option>
+									<option value="GB" id="DISK-gb-mod">GB</option>
+								</select>
+							</td>
+						</tr>
+						<tr class="reset" id="archive-line-mod-pool">
+							<td id="id-ARCHIVE">ARCHIVE</td>
+							<td><input type="text" pattern="[0-9]+" title="Numerical values only" id="limit-ARCHIVE" /></td>
+							<td>
+								<select class="mod-pool-bytes-dropdown">
+									<option value="KB" id="ARCHIVE-kb-mod">KB</option>
+									<option selected="selected" value="MB" id="ARCHIVE-mb-mod">MB</option>
+									<option value="GB" id="ARCHIVE-gb-mod">GB</option>
+								</select>
+							</td>
+						</tr>
+						<tr class="reset" id="remote-line-mod-pool">
+							<td id="id-REMOTE">REMOTE</td>
+							<td><input type="text" pattern="[0-9]+" title="Numerical values only" id="limit-REMOTE" /></td>
+							<td>
+								<select class="mod-pool-bytes-dropdown">
+									<option value="KB" id="REMOTE-kb-mod">KB</option>
+									<option selected="selected" value="MB" id="REMOTE-mb-mod">MB</option>
+									<option value="GB" id="REMOTE-gb-mod">GB</option>
+								</select>
+							</td>
+						</tr>
+					</table>
+					</div>
+					<br />
+					<input type="submit" class="add-button" id="ok-modify-pool" value="Save Changes" />
+					<div class="error-msg" id="error-field-mod-pool"></div>
+					<div class="alert alert-danger" id="alert-panel-mod-pool" style="display:none">
+						<button type="button" class="close" onclick="$('#alert-panel-mod-pool').hide();">&times;</button>
+						<div class="alert-body" id="alert-panel-body-mod-pool"></div>
+      				</div>
+ 				</div>
+			</div>
+		</div>
+	</div>
+	<div class="page-header"><h1><small>Cache Directives</small></h1></div>
+	<div class="cache-directives-content">
+		<div class="directives-table-cont">
+			<table class="table table-bordered table-striped" id="cache-directives-table">
+    			<tr>
+    				<th>Id</th>
+    				<th>Path</th>
+    				<th>Pool</th>
+    				<th>Expiry</th>  			
+    				<th>Replication Vector</th>
+    				<th>Type</th>
+    				<th>Bytes Needed</th>
+    				<th>Bytes Cached</th>
+    				<th>Files Needed</th>
+    				<th>Files Cached</th>
+    				<th></th>
+    			</tr>
+    		</table>
+		</div>
+    	<div class="button-cont">
+    		<button class="add-button" id="add-directive-button">Add Directive</button>&nbsp;&nbsp;
+    	</div>
+    	<div class="popup" id="add-directive-popup">
+			<div class="popup-content add-directive-content">
+				<span class="close" id="close-add-directive">&times;</span>
+				<div class="page-header"><h1><small>Add Cache Directive</small></h1></div>
+				<div class="directive-wrapper">
+					<label class="directive-label">Select Pool:</label>
+					<select id="add-pool-directive-dropdown">
+						<option value="Select One" selected="selected">Select One</option>
+					</select><br />		
+					<label class="directive-label">Enter Directive Path:</label>	
+					<input name="directive-path" type="text" id="add-directive-path"/><br />
+					<div class="error-msg" id="error-dir-path"></div>
+					<label class="directive-label">TTL (Expiry):</label>&nbsp;
+					<input type"text" pattern="[0-9]+" title="Numerical values only" placeholder="Never" id="add-directive-ttl" class="input-ttl directive-ttl"/>&nbsp;
+					<select class="ttl-dropdown-menu" id="add-directive-ttl-dropdown">
+						<option value="s" id="add-sec-dir">Seconds</option>
+						<option value="m" id="add-min-dir">Minutes</option>
+						<option value="h" selected="selected" id="add-hour-dir">Hours</option>
+						<option value="d" id="add-days-dir">Days</option>
+					</select>
+					<br />
+					<label class="directive-label">Directive ID:</label>
+					<input id="add-directive-id" disabled="disabled" type="text"/><br />
+					<label class="edit-directive-rep">Select Replication Vector</label>
+					<div class="table-wrapper repl-types" id="array-type-replication">
+							<table class="add-pool-bytes" id="repl-array-list">
+								<tr class="clear-stor-pool td-add" id="memory-line-add-dir">
+									<td class="td-add" id="replication-M">MEMORY</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="MEMORY-replication" /></td>
+								</tr>	
+								<tr class="clear-stor-pool td-add" id="ram-disk-line-add-dir">
+									<td class="td-add" id="replication-RD">RAM_DISK</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="RAM_DISK-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="ssd-h-line-add-dir">
+									<td class="td-add" id="replication-SH">MEMORY</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="SSD_H-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="ssd-line-add-dir">
+									<td class="td-add" id="replication-S">SSD</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="SSD-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="disk-h-line-add-dir">
+									<td class="td-add" id="replication-DH">DISK_H</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="DISK_H-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="disk-line-add-dir">
+									<td class="td-add" id="replication-D">DISK</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="DISK-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="archive-line-add-dir">
+									<td class="td-add" id="replication-A">ARCHIVE</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="ARCHIVE-replication" /></td>
+								</tr>					
+								<tr class="clear-stor-pool td-add" id="remote-line-add-dir">
+									<td class="td-add" id="replication-R">REMOTE</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="REMOTE-replication" /></td>
+								</tr>
+							</table>
+					</div>
+					<br />
+					<input type="submit" class="add-button" id="ok-add-directive" value="Add Directive" />
+					<div class="error-msg" id="error-field-add-directive"></div>
+					<div class="alert alert-danger" id="alert-panel-add-dir" style="display:none">
+						<button type="button" class="close" onclick="$('#alert-panel-add-dir').hide();">&times;</button>
+						<div class="alert-body" id="alert-panel-body-add-dir"></div>
+      				</div>
+ 				</div>
+			</div>
+		</div>
+		<div class="popup" id="edit-directive-popup">
+			<div class="popup-content edit-directive-content">
+				<span class="close" id="close-edit-directive">&times;</span>
+				<div class="page-header"><h1><small>Edit Cache Directive</small></h1></div>
+				<div class="directive-wrapper">
+					<label class="directive-label">Select Pool for directive:</label>
+					<select id="edit-pool-directive-dropdown">
+						<option value="Select One">Select One</option>
+					</select><br />		
+					<label class="directive-label">Directive Path:</label>									
+					<input type="text" id="edit-directive-path" disabled="disabled"/><br />
+					<label class="directive-label">TTL (Expiry):</label>&nbsp;
+					<input type"text" pattern="[0-9]+" title="Numerical values only" placeholder="Remain the same" id="mod-directive-ttl" class="input-ttl directive-ttl"/>&nbsp;
+					<select class="ttl-dropdown-menu" id="mod-directive-ttl-dropdown">
+						<option value="s" id="mod-sec-dir">Seconds</option>
+						<option value="m" id="mod-min-dir">Minutes</option>
+						<option value="h" selected="selected" id="mod-hour-dir">Hours</option>
+						<option value="d" id="mod-days-dir">Days</option>
+					</select>
+					<br />
+					<label class="directive-label">Directive ID:</label>
+					<input id="edit-directive-id" disabled="disabled" type="text"/><br />
+					<label class="edit-directive-rep">Select Replication Vector</label>
+					<div class="table-wrapper repl-types" id="array-type-replication-mod-dir">
+							<table class="add-pool-bytes" id="repl-array-list-mod-dir">		
+								<tr class="clear-stor-pool td-add" id="memory-line-mod-dir">
+									<td class="td-add" id="mod-replication-M">MEMORY</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input" id="MEMORY-replication-mod" /></td>
+								</tr>	
+								<tr class="clear-stor-pool td-add" id="ram-disk-line-mod-dir">
+									<td class="td-add" id="mod-replication-RD">RAM_DISK</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input" id="RAM_DISK-replication-mod" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="ssd-h-line-mod-dir">
+									<td class="td-add" id="mod-replication-SH">SSD_H</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input" id="SSD_H-replication-mod" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="ssd-line-mod-dir">
+									<td class="td-add" id="mod-replication-S">SSD</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input" id="SSD-replication-mod" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="disk-h-line-mod-dir">
+									<td class="td-add" id="mod-replication-DH">DISK_H</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input" id="DISK_H-replication-mod" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="disk-line-mod-dir">
+									<td class="td-add" id="mod-replication-D">DISK</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input" id="DISK-replication-mod" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="archive-line-mod-dir">
+									<td class="td-add" id="mod-replication-A">ARCHIVE</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input" id="ARCHIVE-replication-mod" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="remote-line-mod-dir">
+									<td class="td-add" id="mod-replication-R">REMOTE</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input" id="REMOTE-replication-mod" /></td>
+								</tr>				
+							</table>
+					</div><br />
+					<div class="error-msg" id="error-mod-rep-vec"></div>
+					<input type="submit" class="add-button" id="ok-edit-directive" value="Save Changes" />
+					<div class="error-msg" id="error-field-edit-directive"></div>
+					<div class="alert alert-danger" id="alert-panel-mod-dir" style="display:none">
+						<button type="button" class="close" onclick="$('#alert-panel-mod-dir').hide();">&times;</button>
+						<div class="alert-body" id="alert-panel-body-mod-dir"></div>
+      				</div>
+ 				</div>
+			</div>
+		</div>
+    </div>	
+	
+</script>
+
+
+<script type="text/javascript" src="/static/jquery-1.10.2.min.js">
+</script><script type="text/javascript" src="/static/bootstrap-3.0.2/js/bootstrap.min.js">
+</script><script type="text/javascript" src="/static/dust-full-2.0.0.min.js">
+</script><script type="text/javascript" src="/static/dust-helpers-1.1.1.min.js">
+</script><script type="text/javascript" src="/static/dfs-dust.js">
+</script><script type="text/javascript" src="/dfshealth.js">
+</script>
+<script>
+function openTab(evt, tabChoice) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablink");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" activel", "");
+    }
+    document.getElementById(tabChoice).style.display = "block";
+    evt.currentTarget.className += " activel";
+}
+</script>
+</body>
+</html>

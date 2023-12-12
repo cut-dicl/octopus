@@ -1,0 +1,32 @@
+#####################################################################
+# Build source code
+#####################################################################
+
+# This instructions explain how to build the source code for Hadoop 2.7.0
+
+
+# 1. # To build the entire project, cd into hadoop-2.7.0 and run: 
+mvn install -DskipTests   # Run this only the first time or after clean
+mvn compile -e -Pnative
+
+# 2. # To create a distribution package, run the command:
+mvn package -Pdist -Pnative -DskipTests -Dmaven.javadoc.skip=true
+
+# The package will be created under 'hadoop-dist/target'
+
+# 3. Other Maven build goals:
+#    * Clean                     : mvn clean
+#    * Compile                   : mvn compile
+#    * Run tests                 : mvn test
+#    * Create JAR                : mvn package
+#    * Run findbugs              : mvn compile findbugs:findbugs
+#    * Run checkstyle            : mvn compile checkstyle:checkstyle
+#    * Build javadocs            : mvn javadoc:javadoc
+#    * Build distribution        : mvn package [-Pdist][-Pdocs][-Psrc][-Dtar]
+#    * Change Hadoop version     : mvn versions:set -DnewVersion=NEWVERSION
+ 
+#    Build options:
+#    * Use -Pdocs to generate & bundle the documentation in the distribution (using -Pdist)
+#    * Use -Psrc to create a project source TAR.GZ
+#    * Use -Dtar to create a TAR with the distribution (using -Pdist)
+

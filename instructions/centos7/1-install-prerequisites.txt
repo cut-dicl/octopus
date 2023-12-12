@@ -1,0 +1,145 @@
+#####################################################################
+# Install necessary components
+#####################################################################
+
+# This instructions explain how to install and configure
+# all prerequisites for compiling and running Hadoop 2.7.0 (YARN)
+# on CentOS, RedHat, and Fedora.
+# These instructions have been tested on CentOS 7.
+
+# 1. Get the latest Java SE SDK.
+#    a) You can list all available packages with:
+sudo yum list available java\*
+
+# and install the latest "devel" one, e.g.:
+sudo yum install java-1.8.0-openjdk-devel
+
+#    b) Setup JAVA_HOME environment variable
+sudo vi /etc/profile.d/custom-paths.sh
+
+#!/bin/bash
+JAVA_HOME=/usr/lib/jvm/java
+export JAVA_HOME
+
+sudo chmod 644 /etc/profile.d/custom-paths.sh
+source /etc/profile.d/custom-paths.sh
+
+
+# 2. Get Apache Ant (needed for building Hadoop)
+#    a) Download and unzip Ant into a directory   	
+wget https://downloads.apache.org/ant/binaries/apache-ant-1.10.11-bin.zip
+unzip apache-ant-1.10.11-bin.zip
+
+#    b) Move Ant folder into /opt and make necessary configurations
+sudo mv apache-ant-1.10.11/ /opt/ant
+sudo chown -R root:root /opt/ant
+sudo ln -s /opt/ant/bin/ant /usr/bin/ant
+
+#    c) Setup Ant environment variable
+sudo vi /etc/profile.d/ant.sh
+
+#!/bin/bash
+ANT_HOME=/opt/ant
+PATH=$ANT_HOME/bin:$PATH
+export PATH ANT_HOME
+export CLASSPATH=.
+
+sudo chmod 644 /etc/profile.d/ant.sh
+source /etc/profile.d/ant.sh
+
+
+# 3. Get Apache Maven (needed for building Hadoop)
+#    a) Download and unzip Ant into a directory   
+wget https://downloads.apache.org/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.zip
+unzip apache-maven-3.3.9-bin.zip
+
+#    b) Move Maven folder into /opt and make necessary configurations
+sudo mv apache-maven-3.3.9/ /opt/maven
+sudo chown -R root:root /opt/maven
+sudo ln -s /opt/maven/bin/mvn /usr/bin/mvn
+
+#    c) Setup Maven environment variable
+sudo vi /etc/profile.d/maven.sh
+
+#!/bin/bash
+MAVEN_HOME=/opt/maven
+PATH=$MAVEN_HOME/bin:$PATH
+export PATH MAVEN_HOME
+export CLASSPATH=.
+
+sudo chmod 644 /etc/profile.d/maven.sh
+source /etc/profile.d/maven.sh
+
+
+# 4. Get Python 3.4 (needed for building Hadoop)
+#    a) Install Python 3.4 from EPEL:
+sudo yum install epel-release
+sudo yum install python34
+curl -O https://bootstrap.pypa.io/3.4/get-pip.py
+sudo /usr/bin/python3.4 get-pip.py 
+
+#    b) Make python3 the default interpreter:
+sudo vi /etc/profile.d/custom-aliases.sh
+
+#!/bin/bash
+alias python='/usr/bin/python3.4'
+
+sudo chmod 644 /etc/profile.d/custom-aliases.sh
+source /etc/profile.d/custom-aliases.sh
+
+
+# 5. Get ProtocolBuffer 2.5.0 (needed for building Hadoop)
+#    a) Download and unzip Protocol Buffer v2.5.0
+wget https://github.com/google/protobuf/releases/download/v2.5.0/protobuf-2.5.0.zip
+unzip protobuf-2.5.0.zip
+
+#    b) Build and install Protocol Buffers
+cd protobuf-2.5.0
+./configure --prefix=/usr
+make
+make check
+sudo make install
+sudo ldconfig
+cd
+
+
+# 6. Get CMake (needed for building Hadoop)
+#    a) Download and install the latest stable release of CMake
+#       When you run the script, select the NON-default options
+wget https://cmake.org/files/v3.6/cmake-3.6.0-rc2-Linux-x86_64.sh
+sudo mkdir /opt/cmake
+sudo mv cmake-3.6.0-rc2-Linux-x86_64.sh /opt/cmake/
+cd /opt/cmake
+sudo /bin/sh cmake-3.6.0-rc2-Linux-x86_64.sh
+sudo chown -R root:root /opt/cmake
+sudo ln -s /opt/cmake/bin/cmake /usr/bin/cmake
+cd
+
+
+# 7. Get various packages for native support
+#    a) Run the following commands:
+
+sudo yum install zlib-devel
+sudo yum install autoconf
+sudo yum install automake
+sudo yum install libtool
+sudo yum install zlib-devel
+sudo yum install openssl-devel
+
+
+# 8.Open a command prompt and verify all installations:
+
+java -version
+javac -version
+ant -version
+mvn -version
+python --version
+protoc --version
+cmake --version
+
+
+# 9.Get Hadoop v2.7.0
+#    Download the source code for Hadoop
+#       https://hadoop.apache.org/releases.html
+#    OR
+#    Get the source code from the DICL GIT repository.

@@ -1,0 +1,179 @@
+# ==============================================
+# Initial GIT setup
+# ==============================================
+
+# Download and install GIT
+#    (a) For windows:
+https://git-scm.com/download/win
+
+#    (b) For Debian Linux (e.g., Ubuntu):
+sudo apt-get install git-all
+
+#    (c) For RedHat Linux (e.g., Fedore, CentOS):
+sudo yum install git-all
+
+# Run ‘Git Bash’ and execute the following commands
+# Use a very short path name with no spaces
+cd /c/dir/to/place/files
+
+# Configure your local GIT environment
+git config --global user.name "You name and lastname"
+git config --global user.email youemail@cut.ac.cy
+git config --global push.default simple
+git config --global core.longpaths true
+git config --list
+
+# ONLY for windows
+git config --global core.autocrlf true
+git config --global core.safecrlf false
+
+# ONLY for linux
+git config --global core.autocrlf input
+git config --global core.safecrlf false
+
+# Clone the remote GIT repository
+git clone USERNAME@dicl.cut.ac.cy:/home1/git/octapus/octapus.git
+
+# IF you are given a branch to work with, run
+git checkout BRANCHNAME
+
+
+# ==============================================
+# Basic GIT workflow
+# ==============================================
+
+# The basic workflow for using GIT is as follows:
+# 1. You modify/add/delete/rename some files
+#    Note: You can see your changes using these commands
+git status
+git diff fileName
+
+# 2. You add your changes into the GIT staging area
+#    (a) if you modify or add files:
+git add fileNames
+
+#    (b) if you delete files:
+git rm fileNames
+
+#    (c) if you rename files:
+git mv oldName newName
+
+# 3. Verify that all the changes you want are in the staging area
+git status
+
+# 4. Commit your changes to your local GIT repository
+git commit -m 'Enter a descriptive comment for your changes'
+
+# 5. Pull any changes from the remote GIT repository
+#    Note: This will automatically merge any changes made by other
+#    team members. In case of conflicting cases, you need to
+#    resolve them manually and recommitting before moving to step 6
+git pull origin
+
+# 6. Push your changes to the remote GIT repository
+#    Note: replace 'branchname' with the name of the branch you
+#    are working on
+git push origin branchname
+
+
+# ==============================================
+# Useful GIT commands
+# ==============================================
+
+# View changes made in a modified file before running 'git add'
+git diff filename
+
+# View changes made in a modified file after running 'git add'
+git diff --staged filename
+
+# View changes between commits
+git diff HEAD^ HEAD
+git diff commitID^ commitID
+git diff commitID1 commitID2
+
+# View a history of the last 3 commits
+git log -3
+git log -3 --pretty=oneline
+
+# View a history of the last 3 commits with statistical information
+git log --stat -3
+
+# View a history of the last 3 commits, along with the files
+git log --name-status -3
+
+# Remove a file from the staging area (i.e., you run 'git add' but
+# then you decided you do NOT want to commit some file)
+# Note: your file is not affected in any way
+git reset HEAD filename
+
+# Undo some modifications you made to a file
+# WARNING: You will lose your modications
+git checkout -- filename
+
+# View all remote repositories connected to your local repository
+git remote -v
+
+# View information about a repote GIT repository (e.g., origin)
+git remote show origin
+
+
+# ==============================================
+# GIT commands for Branching
+# ==============================================
+# View all available local branches
+# Note: * shows your current branch
+git branch -v
+
+# View all available remote branches
+git remote show
+git branch -a
+
+# Create a branch
+git branch branchname
+
+# Checkout an existing branch (i.e., switch to that branch)
+git checkout branchname
+
+# Create and checkout a new branch
+git checkout -b branchname
+
+# Push a branch into the remote repository
+git push origin branchname
+
+# Pull a new remote branch from the remote repository
+git pull origin
+git checkout --track origin/branchname
+
+# Merge a branch into master
+# Note: In case of conflicts, fix them and do 'git commit'
+git checkout master
+git merge branchname
+
+# Delete a branch
+git branch -d branchname
+
+# Delete a remote branch
+git push origin --delete branchname
+
+# Print out the history of the commits for all branches
+git log --oneline --decorate --graph --all
+
+
+# ===========================================
+# Optional: Configure DiffMerge on Windows 
+# ===========================================
+
+git config --global diff.tool diffmerge
+git config --global difftool.diffmerge.cmd "C:/Program\ Files/SourceGear/Common/DiffMerge/sgdm.exe \$LOCAL \$REMOTE"
+
+git config --global merge.tool diffmerge
+git config --global mergetool.diffmerge.trustExitCode true
+git config --global mergetool.diffmerge.cmd "C:/Program\ Files/SourceGear/Common/DiffMerge/sgdm.exe /merge /result=\$MERGED \$LOCAL \$BASE \$REMOTE"
+
+
+# ===========================================
+# Resources
+# ===========================================
+
+# Read chapters 1, 2, and 3
+https://git-scm.com/book/en/v2

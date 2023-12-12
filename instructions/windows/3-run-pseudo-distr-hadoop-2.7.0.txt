@@ -1,0 +1,213 @@
+#####################################################################
+# Run source code on pseudo-distributed mode
+#####################################################################
+
+This instructions explain how to run Hadoop 2.7.0 on pseudo-distributed mode.
+
+In order to run Hadoop, you will first need to modify the XML configuration
+files that are present in the 'etc/hadoop' folder of the binary package.
+However, each time you compile and package Hadoop, you get a new version 
+of the entire binary package, including new jars, new conf files, etc.
+Hence, any changes you made to the configuration files are lost.
+To avoid losing your changes, you can save the configurations to a folder 
+outside the binary package directory and 
+(a) either copy them into 'etc/hadoop' after you run 'mvn package', or
+(b) execute all commands using the --config option.
+Both choices are explained below.
+
+
+# Setup the configuration files
+#####################################################################
+
+The GIT repository contains a folder 'sample-confs' which
+contains all the necessary configuration files for running Hadoop
+either on linux or windows.
+
+Copy one folder into your own 'conf' folder. Go through all .xml and
+.cmd files and make all necessary changes that are specific to your
+computer (mainly, fix any absolute paths).
+
+You will need to modify the following entries:
+* core-site.xml
+  + hadoop.tmp.dir: specify a local directory for temp data
+
+* hdfs-site.xml
+  + dfs.namenode.name.dir: specify a local directory for fsimage data
+  + dfs.namenode.edits.dir: specify a local directory for edits data
+  + dfs.datanode.data.dir: specify local directories for the datanode
+
+* mapred-site.xml
+  + most parameters here affect performance
+
+* yarn-site.xml
+  + yarn.nodemanager.log-dirs: specify a local directory
+  + yarn.application.classpath: make sure the env variables are of the
+      form $XXX for LINUX or %XXX% for WINDOWS
+
+* hadoop-env.sh
+  + HADOOP_LOG_DIR: a local directory for log files
+
+* mapred-env.sh
+  + HADOOP_MAPRED_LOG_DIR: a local directory for log files
+
+* yarn-env.sh
+  + YARN_LOG_DIR: a local directory for log files
+
+
+
+# Option A: Execute Hadoop after copying conf files into 'etc/hadoop'
+#####################################################################
+
+1. Launch a **Windows SDK Command Prompt with admin priviledges**.
+   Note: You need admin priviledges for Hadoop's use of symbolic links
+   to work correctly. The alternative option would be to create a new
+   local user without admin priviledges and explicitely enable the
+   priviledge SeCreateSymbolicLinkPrivilege (“Create symbolic links”) 
+   to the local security policy.
+
+2. Format the HDFS file system. You only need to do this once!
+   bin\hdfs namenode -format
+
+3. Start the HDFS and YARN services
+   start bin\hdfs namenode
+   start bin\hdfs datanode
+   start bin\yarn resourcemanager
+   start bin\yarn nodemanager
+   start bin\mapred historyserver
+
+   ** In case of errors due to permission issues:
+   a) Go to %HADOOP_HOME%/share/hadoop, right click, and
+      select properties.
+   b) Go to "Security" tab. If the security tab is not there,
+      launch a cmd window as admin and run the following command:
+      REG add HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer /v Nosecuritytab /t REG_DWORD /d 0 /f 
+   c) On the "Security" tab, click on "Advnaced", then 
+      click on "Change Permissions..."
+   d) Select your user name, click "Edit..." and add all permissions.
+   e) Check the box "Replace all child object permissions with..."
+   f) Click on "Apply", then "OK"
+
+4. You can access the web interfaces here:
+   HDFS: http://localhost:50070
+   YARN: http://localhost:8088/cluster
+   History: http://localhost:19888/jobhistory
+
+5. Run TeraGen and TeraSort MapReduce jobs
+   start bin\yarn jar share\hadoop\mapreduce\hadoop-mapreduce-examples-2.7.0.jar teragen 500000 tera/in
+   start bin\yarn jar share\hadoop\mapreduce\hadoop-mapreduce-examples-2.7.0.jar terasort tera/in tera/out
+
+
+# Option B: Execute Hadoop using the --config option
+#####################################################################
+
+1. Launch a **Windows SDK Command Prompt with admin priviledges**.
+   Note: You need admin priviledges for Hadoop's use of symbolic links
+   to work correctly. The alternative option would be to create a new
+   local user without admin priviledges and explicitely enable the
+   priviledge SeCreateSymbolicLinkPrivilege (“Create symbolic links”) 
+   to the local security policy.
+
+2. Format the HDFS file system.
+   bin\hdfs --config C:\Path\to\conf namenode -format
+
+3. Start the HDFS and YARN services
+   start bin\hdfs --config C:\Path\to\conf namenode
+   start bin\hdfs --config C:\Path\to\conf datanode
+   start bin\yarn --config C:\Path\to\conf resourcemanager
+   start bin\yarn --config C:\Path\to\conf nodemanager
+   start bin\mapred --config C:\Path\to\conf historyserver
+
+   ** In case of errors due to permission issues:
+   a) Go to %HADOOP_HOME%/share/hadoop, right click, and
+      select properties.
+   b) Go to "Security" tab. If the security tab is not there,
+      launch a cmd window as admin and run the following command:
+      REG add HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer /v Nosecuritytab /t REG_DWORD /d 0 /f 
+   c) On the "Security" tab, click on "Advnaced", then 
+      click on "Change Permissions..."
+   d) Select your user name, click "Edit..." and add all permissions.
+   e) Check the box "Replace all child object permissions with..."
+   f) Click on "Apply", then "OK"
+
+4. You can access the web interfaces here:
+   HDFS: http://localhost:50070
+   YARN: http://localhost:8088/cluster
+   History: http://localhost:19888/jobhistory
+
+5. Run TeraGen and TeraSort MapReduce jobs
+   start bin\yarn --config C:\Path\to\conf jar share\hadoop\mapreduce\hadoop-mapreduce-examples-2.7.0.jar teragen 500000 tera/in
+   start bin\yarn --config C:\Path\to\conf jar share\hadoop\mapreduce\hadoop-mapreduce-examples-2.7.0.jar terasort tera/in tera/out
+
+
+#####################################################################
+# Run a second datanode on the same machine
+#####################################################################
+
+1. Copy your own 'conf' folder into a new folder, say 'conf2'.
+
+2. In 'conf2', modify the following files by changing or adding the
+   corresponding properties. For 'dfs.datanode.data.dir', add new
+   local directories that are different from the ones appearing in
+   'dfs.datanode.data.dir' in 'conf/hdfs-site.xml'.
+
+   a) hdfs-site.xml
+   ----------------
+
+   <property>
+     <name>dfs.datanode.address</name>
+     <value>0.0.0.0:50110</value>
+   </property>
+
+   <property>
+     <name>dfs.datanode.ipc.address</name>
+     <value>0.0.0.0:50120</value>
+   </property>
+
+   <property>
+     <name>dfs.datanode.http.address</name>
+     <value>0.0.0.0:50175</value>
+   </property>
+
+   <property>
+     <name>dfs.datanode.data.dir</name>
+     <value>[DISK]file:/C:/Yarn/dfs2/data,[SSD]file:/C:/Yarn/dfs2/data-ssd,[MEMORY]file:/C:/Yarn/dfs2/data-mem</value>
+   </property>
+
+
+   b) mapred-site.xml
+   ------------------
+
+   <property>
+     <name>mapreduce.tasktracker.http.address</name>
+     <value>0.0.0.0:50160</value>
+   </property>
+
+   <property>
+     <name>mapreduce.shuffle.port</name>
+     <value>13662</value>
+   </property>
+
+
+   c) yarn-site.xml
+   ----------------
+
+   <property>
+     <name>yarn.nodemanager.address</name>
+     <value>${yarn.nodemanager.hostname}:38112</value>
+   </property>
+
+   <property>
+     <name>yarn.nodemanager.localizer.address</name>
+     <value>${yarn.nodemanager.hostname}:8140</value>
+   </property>
+
+   <property>
+     <name>yarn.nodemanager.webapp.address</name>
+     <value>${yarn.nodemanager.hostname}:8142</value>
+   </property>
+
+
+3. Start the HDFS and YARN slave services using 'conf2'
+   start bin\hdfs --config C:\Path\to\conf2 datanode
+   start bin\yarn --config C:\Path\to\conf2 nodemanager
+

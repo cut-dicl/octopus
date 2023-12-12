@@ -1,0 +1,291 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License. See accompanying LICENSE file.
+-->
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
+
+<property>
+  <name>mapreduce.framework.name</name>
+  <value>yarn</value>
+  <description>The runtime framework for executing MapReduce jobs.
+  Can be one of local, classic or yarn.
+  </description>
+</property>
+
+<property>
+  <name>yarn.app.mapreduce.am.staging-dir</name>
+  <value>/user/hadoop-yarn/staging</value>
+  <description>The staging dir used while submitting jobs.
+  </description>
+</property>
+
+
+<property>
+  <name>mapreduce.jobtracker.address</name>
+  <value>local</value>
+  <description>The host and port that the MapReduce job tracker runs
+  at.  If "local", then jobs are run in-process as a single map
+  and reduce task.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.jobtracker.http.address</name>
+  <value>dicl11.cut.ac.cy:50030</value>
+  <description>
+    The job tracker http server address and port the server will listen on.
+    If the port is 0 then the server will start on a free port.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.tasktracker.http.address</name>
+  <value>dicl11.cut.ac.cy:50060</value>
+  <description>
+    The task tracker http server address and port.
+    If the port is 0 then the server will start on a free port.
+  </description>
+</property>
+
+
+
+<property>
+  <name>mapreduce.tasktracker.map.tasks.maximum</name>
+  <value>6</value>
+  <description>The maximum number of map tasks that will be run
+  simultaneously by a task tracker.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.tasktracker.reduce.tasks.maximum</name>
+  <value>2</value>
+  <description>The maximum number of reduce tasks that will be run
+  simultaneously by a task tracker.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.job.maps</name>
+  <value>2</value>
+  <description>The default number of map tasks per job.
+  Ignored when mapreduce.jobtracker.address is "local".  
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.job.reduces</name>
+  <value>1</value>
+  <description>The default number of reduce tasks per job. Typically set to 99%
+  of the cluster's reduce capacity, so that if a node fails the reduces can 
+  still be executed in a single wave.
+  Ignored when mapreduce.jobtracker.address is "local".
+  </description>
+</property>
+
+<property>
+  <name>mapred.child.java.opts</name>
+  <value>-Xmx512m</value>
+  <description>Java opts for the task tracker child processes.  
+  The following symbol, if present, will be interpolated: @taskid@ is replaced 
+  by current TaskID. Any other occurrences of '@' will go unchanged.
+  For example, to enable verbose gc logging to a file named for the taskid in
+  /tmp and to set the heap maximum to be a gigabyte, pass a 'value' of:
+        -Xmx1024m -verbose:gc -Xloggc:/tmp/@taskid@.gc
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.map.speculative</name>
+  <value>false</value>
+  <description>If true, then multiple instances of some map tasks 
+               may be executed in parallel.</description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.speculative</name>
+  <value>false</value>
+  <description>If true, then multiple instances of some reduce tasks 
+               may be executed in parallel.</description>
+</property>
+
+
+<property>
+  <name>mapreduce.jobhistory.address</name>
+  <value>dicl11.cut.ac.cy:10020</value>
+  <description>MapReduce JobHistory Server IPC host:port</description>
+</property>
+
+<property>
+  <name>mapreduce.jobhistory.webapp.address</name>
+  <value>dicl11.cut.ac.cy:19888</value>
+  <description>MapReduce JobHistory Server Web UI host:port</description>
+</property>
+
+<property>
+  <name>mapreduce.jobtracker.jobhistory.location</name>
+  <value></value>
+  <description> If job tracker is static the history files are stored 
+  in this single well known place. If No value is set here, by default,
+  it is in the local file system at ${hadoop.log.dir}/history.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.job.userhistorylocation</name>
+  <value></value>
+  <description> User can specify a location to store the history files of 
+  a particular job. If nothing is specified, the logs are stored in 
+  output directory. The files are stored in "_logs/history/" in the directory.
+  User can stop logging by giving the value "none". 
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.jobtracker.jobhistory.completed.location</name>
+  <value></value>
+  <description> The completed job history files are stored at this single well 
+  known location. If nothing is specified, the files are stored at 
+  ${mapreduce.jobtracker.jobhistory.location}/done.
+  </description>
+</property>
+
+
+
+<property>
+  <name>mapreduce.task.io.sort.factor</name>
+  <value>50</value>
+  <description>The number of streams to merge at once while sorting
+  files.  This determines the number of open file handles.</description>
+</property>
+
+<property>
+  <name>mapreduce.task.io.sort.mb</name>
+  <value>512</value>
+  <description>The total amount of buffer memory to use while sorting 
+  files, in megabytes.  By default, gives each merge stream 1MB, which
+  should minimize seeks.</description>
+</property>
+
+<property>
+  <name>mapreduce.map.sort.spill.percent</name>
+  <value>0.80</value>
+  <description>The soft limit in the serialization buffer. Once reached, a
+  thread will begin to spill the contents to disk in the background. Note that
+  collection will not block if this threshold is exceeded while a spill is
+  already in progress, so spills may be larger than this threshold when it is
+  set to less than .5</description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.shuffle.parallelcopies</name>
+  <value>10</value>
+</property>
+
+<property>
+  <name>mapreduce.reduce.shuffle.merge.percent</name>
+  <value>0.66</value>
+  <description>The usage threshold at which an in-memory merge will be
+  initiated, expressed as a percentage of the total memory allocated to
+  storing in-memory map outputs, as defined by
+  mapreduce.reduce.shuffle.input.buffer.percent.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.shuffle.input.buffer.percent</name>
+  <value>0.70</value>
+  <description>The percentage of memory to be allocated from the maximum heap
+  size to storing map outputs during the shuffle.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.input.buffer.percent</name>
+  <value>0.0</value>
+  <description>The percentage of memory- relative to the maximum heap size- to
+  retain map outputs during the reduce. When the shuffle is concluded, any
+  remaining map outputs in memory must consume less than this threshold before
+  the reduce can begin.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.map.output.compress</name>
+  <value>false</value>
+  <description>Should the outputs of the maps be compressed before being
+               sent across the network. Uses SequenceFile compression.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.map.cpu.vcores</name>
+  <value>1</value>
+  <description>Map task vcore reservation</description>
+</property>
+
+<property>
+  <name>mapreduce.map.memory.mb</name>
+  <value>2048</value>
+  <description>Map task memory reservation</description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.cpu.vcores</name>
+  <value>1</value>
+  <description>Reduce task vcore reservation</description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.memory.mb</name>
+  <value>2560</value>
+  <description>Reduce task memory reservation</description>
+</property>
+
+<property>
+  <name>mapreduce.map.java.opts</name>
+  <value>-Xmx1844m</value>
+  <description>Map task Java heap size</description>
+</property>
+
+<property>
+  <name>mapreduce.reduce.java.opts</name>
+  <value>-Xmx2304m</value>
+  <description>Reduce Task Java heap size</description>
+</property>
+
+<property>
+  <name>mapreduce.client.submit.file.replication</name>
+  <value>5</value>
+  <description>The replication level for submitted job files.  This
+  should be around the square root of the number of nodes.
+  </description>
+</property>
+
+<property>
+  <name>mapreduce.octopus.prefetcher.strategy</name>
+  <value>2</value>
+  <description>0=no prefetching; 1=always prefetching; 2=selective prefetching</description>
+</property>
+
+<property>
+  <name>mapreduce.octopus.prefetcher.max.wait.ms</name>
+  <value>0</value>
+</property>
+
+</configuration>

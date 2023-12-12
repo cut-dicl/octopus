@@ -1,0 +1,116 @@
+#####################################################################
+# Setup Eclipse for Hadoop
+#####################################################################
+
+This instructions explain how to eclipse for developing and running
+Hadoop 2.7.0.
+
+
+# Setup Hadoop development with Eclipse
+#####################################################################
+
+1. Prepare the local eclipse project files:
+   From the Hadoop installation directory run:
+      mvn install -DskipTests
+      mvn eclipse:eclipse -DskipTests
+
+2. Setup the local installation of Maven in Eclipse:
+   a) Go to 'Windows->Preferences->Maven->Installations->Click Add'
+   b) Select your local maven installation directory
+
+3. Import the Hadoop project into Eclipse:
+   a) Go to 'File->Imprort->Maven->Existing Maven Projects'
+   b) Browse to the root of the Hadoop directory and click Finish
+      (ignore the errors for now)
+
+4. If needed, fix the dependencies on generated sources
+   Right click on each of the following projects, 
+   select 'Build path->Configure build path',
+   click add folder and select the 'target->generated-sources->java'
+   directory
+      hadoop-common
+      hadoop-hdfs
+      hadoop-hdfs-bkjournal
+      hadoop-mapreduce-client-common
+      hadoop-mapreduce-client-core
+      hadoop-mapreduce-client-shuffle
+      hadoop-yarn-api
+      hadoop-yarn-client
+      hadoop-yarn-common
+      hadoop-yarn-server-applicationhistoryservice
+      hadoop-yarn-server-common
+      hadoop-yarn-server-nodemanager
+      hadoop-yarn-server-resourcemanager
+      hadoop-yarn-server-tests
+
+5. If needed, fix the dependencies on generated test sources
+   Right click on each of the following projects, 
+   select 'Build path->Configure build path',
+   click add folder and select the 'target->generated-test-sources->java'
+   directory
+      hadoop-common
+
+6. If you get the error "Project 'hadoop-streaming' is missing required
+   source folder: '/Users/chris/git/hadoop-common/hadoop-yarn-project/
+   hadoop-yarn/hadoop-yarn-server/hadoop-yarn-server-resourcemanager/
+   conf'", then:
+   (a) copy the 'hadoop-yarn-project/hadoop-yarn/hadoop-yarn-server/
+       hadoop-yarn-server-resourcemanager/conf' folder into the 
+       'hadoop-tools\hadoop-streaming' directory
+   (b) add the new folder in the the java build path of the 
+       hadoop-streaming project in eclipse
+
+7. If you get errors "Plugin execution not covered by lifecycle 
+   configuration", you can mark them as ingored. To do so,
+   right click on each of them and select 'Quick Fix' and then
+   select 'Mark goal * as ignored in Eclipse build in Eclipse
+   preferences' and select all from the list showed below.
+
+
+# Setup Hadoop debbuging with Eclipse
+#####################################################################
+
+I'll list the steps for debugging the NameNode. The rest are similar.
+
+1. Make sure first that you can run the NameNode without errors outside
+   eclipse.
+
+2. Modify the 'bin/hdfs.cmd' file and replace 'call %JAVA% %java_arguments%'
+   with 'set; echo call %JAVA% %java_arguments%'
+   When you run 'bin/hdfs.cmd namenode', it will print out the
+   current environmental variables and the exact command for
+   launching the NameNode.
+
+3. In eclipse, create a new debug configuration for NameNode.java and set
+   - The VM arguments based on the launch command from above
+   - The working directory from where you want the NameNode to run
+   - The classpath: Add an advanced string variable under User Entries
+     based on the launch command from above. Remove the other User Entries.
+   - The source locations for the hdfs and common projects.
+   - Add all hadoop-related environmental variables from above
+
+
+For debugging the MRAppMaster, which is automatically started when a
+MR job is submitted to a YARN cluster, you need to perform the following:
+1. Add the following property to yarn-site.xml
+
+  <property>
+    <name>yarn.app.mapreduce.am.command-opts</name>
+    <value>-Xmx256m -agentlib:jdwp=transport=dt_socket,address=127.0.0.1:52260,server=y,suspend=y</value>
+    <description>AM Java heap size.</description>
+  </property>
+
+
+2. In eclipse, go to 'Debug Configurations' and create a new 'Remote Java Application'
+   - In Connect tab, set host = 127.0.0.1
+   - In Connect tab, set port = 52260
+   - In Source tab, added relevant MapReduce and YARN projects
+
+3. Execute a MR job from the command line and wait for the application to start running.
+   The MRAppMaster will start suspended.
+
+4. In Eclipse, start the debugging of the remote application. Make sure to set a 
+   breakpoint because as soon as the debuger is connected, the MRAppMaster will
+   resume execution.
+
+

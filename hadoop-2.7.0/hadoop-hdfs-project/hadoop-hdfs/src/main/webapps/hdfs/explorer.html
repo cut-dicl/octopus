@@ -1,0 +1,243 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+    
+    EDITED BY: Nicolas Karmiris
+ 	For the purpose of extending the existing WebInterface of HadoopFS to a new
+	inteface that implements the functionalities of the new OctapusFS.
+ 	Cyprus University of Technology, 2017
+  -->
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=9" />
+    <link rel="stylesheet" type="text/css" href="/static/bootstrap-3.0.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="/static/hadoop.css" />
+    <link rel="stylesheet" type="text/css" href="style/dfsstyle.css" />
+    <title>Browsing HDFS</title>
+  </head>
+  <body>
+
+    <header class="navbar navbar-inverse bs-docs-nav" role="banner">
+    <div class="container">
+      <div class="navbar-header">
+        <div class="navbar-brand">Hadoop | OctopusFS</div>
+      </div>
+
+      <ul class="nav navbar-nav" id="ui-tabs">
+        <li><a href="dfshealth.html#tab-overview">Overview</a></li>
+        <li><a href="dfshealth.html#tab-datanode">Datanodes</a></li>
+        <li><a href="dfshealth.html#tab-snapshot">Snapshot</a></li>
+        <li><a href="dfshealth.html#tab-startup-progress">Startup Progress</a></li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown">Utilities <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+            <li><a href="#">Browse the file system</a></li>
+            <li><a href="logs">Logs</a></li>
+          </ul>
+        </li>
+        <li><a href="dfshealth.html#tab-storage-tiers">Storage Tiers</a></li>
+        <li><a href="dfshealth.html#tab-caching">Caching</a></li>
+      </ul>
+    </div>
+    </header>
+
+    <div class="modal" id="file-info" tabindex="-1" role="dialog" aria-hidden="true">
+      <div class="modal-dialog">
+	<div class="modal-content">
+	  <div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	    <h4 class="modal-title" id="file-info-title">File information</h4>
+	  </div>
+	  <div class="modal-body" id="file-info-body">
+      <a id="file-info-download">Download</a> &nbsp;&nbsp; | &nbsp;&nbsp;
+      <a id="file-delete" style="cursor:pointer">Delete File</a>
+        <!--<a id="file-info-preview" style="cursor:pointer">Tail the file (last 32K)</a>-->
+	    <hr />
+	    <div class="panel panel-success" id="file-info-blockinfo-panel">
+	      <div class="panel-heading">
+		Block information -- 
+		<select class="btn btn-default" id="file-info-blockinfo-list">
+		</select>
+	      </div>
+	      <div class="panel-body" id="file-info-blockinfo-body"></div>
+	    </div>
+	    <div class="panel panel-info" id="file-info-tail" style="display:none">
+	      <div class="panel-heading">File contents</div>
+	      <div class="panel-body">
+		<div class="input-group-sm">
+		<textarea class="form-control" style="height: 150px" id="file-info-preview-body"></textarea>
+		</div>
+	      </div>
+	    </div>
+	  </div>
+	  <div class="modal-footer"><button type="button" class="btn btn-success"
+					    data-dismiss="modal">Close</button></div>
+	</div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="page-header">
+	<h1>Browse Directory</h1>
+      </div>
+      <div class="alert alert-danger" id="alert-panel" style="display:none">
+	<button type="button" class="close" onclick="$('#alert-panel').hide();">&times;</button>
+	<div class="alert-body" id="alert-panel-body"></div>
+      </div>
+      <div class="row">
+	<form onsubmit="return false;">
+	  <div class="input-group"><input type="text" class="form-control" id=
+					  "directory" /> <span class="input-group-btn"><button class="btn btn-default"
+											       type="submit" id="btn-nav-directory"><span class="input-group-btn">Go!</span></button></span></div>
+	</form>
+      </div>
+      <br />
+      <div id="panel"></div>
+      <hr>
+      <div class="upload-container">
+        <h3>Upload to FileSystem</h3>
+        <br>
+        <form id="form" method="post">
+          <label class="file-label">Select a file:</label>
+          <input type="file" id='sourceFile' name="file" />
+          <input type="submit" id="upl-button" class="function-button" value="Upload File" />
+        </form>
+        <div class="error-msg" id="errorPanel"></div>
+      </div>
+      <div class="row">
+        <hr />
+        <div class="col-xs-2"><p>Hadoop, 2014.</p></div>
+      </div>
+
+    </div>
+
+    <script type="text/x-dust-template" id="tmpl-explorer">
+      <table class="table" id="browsing-table">
+        <thead>
+          <tr>
+            <th>Permission</th>
+            <th>Owner</th>
+            <th>Group</th>
+            <th>Size</th>
+            <th>Last Modified</th>
+            <th>Replication</th>
+            <th></th>
+            <th>Block Size</th>
+            <th>Name</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#FileStatus}
+          <tr>
+            <td>{type|helper_to_directory}{permission|helper_to_permission}{aclBit|helper_to_acl_bit}</td>
+            <td>{owner}</td>
+            <td>{group}</td>
+            <td>{length|fmt_bytes}</td>
+            <td>{#helper_date_tostring value="{modificationTime}"/}</td>
+            <td class="repl">{replication}&nbsp;</td>
+			      <td class="edit-rep" id="{pathSuffix}-rep"></td>           
+            <td>{blockSize|fmt_bytes}</td>
+            <td><a style="cursor:pointer" id="{pathSuffix}" inode-type="{type}" class="explorer-browse-links" inode-path="{pathSuffix}">{pathSuffix}</a></td>            
+          </tr>
+          {/FileStatus}
+        </tbody>
+      </table>      
+      <div class="popup" id="replication-wrapper" style="display: none">
+      	<div class="popup-content add-pool-content replication-content">
+      		<form id="replication-form" class="form-content">
+      			<span class="close" id="close-replication">&times;</span>
+      			<label class="rep-label">Select Replication</label><br />      			
+      			<div class="table-wrapper">
+      				<table class="replication-array" id="repl-array-list">
+      					<tr class="clear-stor-pool td-add" id="memory-line">
+									<td class="td-add" id="replication-M">MEMORY</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="MEMORY-replication" /></td>
+								</tr>	
+								<tr class="clear-stor-pool td-add" id="ram-disk-line">
+									<td class="td-add" id="replication-RD">RAM_DISK</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="RAM_DISK-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="ssd-h-line">
+									<td class="td-add" id="replication-SH">MEMORY</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="SSD_H-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="ssd-line">
+									<td class="td-add" id="replication-S">SSD</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="SSD-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="disk-h-line">
+									<td class="td-add" id="replication-DH">DISK_H</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="DISK_H-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="disk-line">
+									<td class="td-add" id="replication-D">DISK</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="DISK-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="archive-line">
+									<td class="td-add" id="replication-A">ARCHIVE</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="ARCHIVE-replication" /></td>
+								</tr>					
+								<tr class="clear-stor-pool td-add" id="remote-line">
+									<td class="td-add" id="replication-R">REMOTE</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="REMOTE-replication" /></td>
+								</tr>
+								<tr class="clear-stor-pool td-add" id="unspecified-line">
+									<td class="td-add" id="replication-U">UNSPECIFIED</td>
+									<td><input type="text" pattern="[0-9]+" title="Numerical values only" class="replication-types-input reset-add-directive" id="UNSPECIFIED-replication" /></td>
+								</tr>
+      				</table>      				
+      			</div>      			
+      			<div class="error-msg" id="error-field"></div><br />
+      			<input type="submit" value="OK" id="ok-button" class="add-button"/>
+      		</form>
+      	</div>
+      </div>
+    </script>
+
+    <script type="text/x-dust-template" id="tmpl-block-info">
+      {#block}
+      <p>Block ID: {blockId}</p>
+      <p>Block Pool ID: {blockPoolId}</p>
+      <p>Generation Stamp: {generationStamp}</p>
+      <p>Size: {numBytes}</p>
+      {/block}
+      <p>Cached Replica: 
+      	<ul>
+      		{#cachedLocations}
+      		<li>{hostName}: {infoPort}</li>
+      		<li>StorageID: &nbsp;{storID}</li>
+      		<li>Storage Type: &nbsp;{storType}</li>
+      		{/cachedLocations}	
+      	</ul>      	
+      </p>
+      <p>Availability:
+        <ul>
+          {#locations}
+          <li>{hostName}: &nbsp;{xferPort}</li>
+          <li>StorageID: &nbsp;{storID}</li>
+          <li>Storage Type: &nbsp;{storType}</li>          
+          {/locations}          
+        </ul>
+      </p>      
+    </script>
+    <script type="text/javascript" src="/static/jquery-1.10.2.min.js">
+    </script><script type="text/javascript" src="/static/bootstrap-3.0.2/js/bootstrap.min.js">
+    </script><script type="text/javascript" src="/static/dust-full-2.0.0.min.js">
+    </script><script type="text/javascript" src="/static/dust-helpers-1.1.1.min.js">
+    </script><script type="text/javascript" src="/static/dfs-dust.js">
+    </script><script type="text/javascript" src="explorer.js">
+    </script>
+  </body>
+</html>

@@ -1,0 +1,64 @@
+#####################################################################
+# Build source code
+#####################################################################
+
+This instructions explain how to build the source code for Hadoop 2.7.0
+
+
+1. Add a 'Platform' system environment variable and set it to x64 or Win32.
+   Both the name and the value are case sensitive.
+
+2. If you are using Visual Studio 2012 or 2015, navigate to the following
+   two VS solutions, open them, select the option "Update" from
+   the pop-up, and close them saving the changes.
+   a) hadoop-common-project\hadoop-common\src\main\native\native.sln
+   b) hadoop-common-project\hadoop-common\src\main\winutils\winutils.sln
+
+3. Open a 
+   - Windows SDK Command Prompt (for Win 7), or
+   - Development Command Prompt for VS2015 (for Win 7 with VZ2015), or
+   - Visual Studio Command Prompt (for Win 8)
+   with **administrative priviledges** (for symbolic links to work 
+   correctly) and change the directory to the Hadoop project folder 
+   (e.g., c:\hadoop-2.7.0).
+
+4. To build the entire project, run the command: 
+   mvn compile -e
+
+   In case of failures related to maven plugins run:
+   cd hadoop-maven-plugins
+   mvn install
+
+   In case of msbuild errors, uninstall Citrix offline Plugin.
+   If the error does not fix then you must do advanced uninstall
+   with a suitable software or manually
+
+   In case of winutils.exe error:
+   "LINK : fatal error LNK1123: failure during conversion to COFF: file invalid or corrupt"
+   Replace C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\cvtres.exe
+   with C:\windows\Microsoft.NET\Framework\v4.0.30319\cvtres.exe
+   Replace C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\amd64\cvtres.exe
+   with C:\windows\Microsoft.NET\Framework64\v4.0.30319\cvtres.exe
+   If this doesn't work, unistall .NET 4.5 and reinstall .NET 4.0
+
+5. To create a distribution package, run the command:
+   mvn package -DskipTests -Pdist -Dmaven.javadoc.skip=true
+
+6. The package will be created under 'hadoop-dist/target'
+
+7. Other Maven build goals:
+   * Clean                     : mvn clean
+   * Compile                   : mvn compile
+   * Run tests                 : mvn test
+   * Create JAR                : mvn package
+   * Run findbugs              : mvn compile findbugs:findbugs
+   * Run checkstyle            : mvn compile checkstyle:checkstyle
+   * Build javadocs            : mvn javadoc:javadoc
+   * Build distribution        : mvn package [-Pdist][-Pdocs][-Psrc][-Dtar]
+   * Change Hadoop version     : mvn versions:set -DnewVersion=NEWVERSION
+
+   Build options:
+   * Use -Pdocs to generate & bundle the documentation in the distribution (using -Pdist)
+   * Use -Psrc to create a project source TAR.GZ
+   * Use -Dtar to create a TAR with the distribution (using -Pdist)
+
